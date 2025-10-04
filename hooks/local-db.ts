@@ -1,7 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Task } from "@/types/task-types";
-import * as SecureStore from "expo-secure-store";
 
-const TASKS_KEY = "memoract_tasks";
+const TASKS_STORAGE_KEY = "@memoract_tasks";
 
 export function useDB() {
   const saveTask = async (task: Omit<Task, "id">): Promise<Task> => {
@@ -14,7 +14,7 @@ export function useDB() {
       };
 
       tasks.push(newTask);
-      await SecureStore.setItemAsync(TASKS_KEY, JSON.stringify(tasks));
+      await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
 
       return newTask;
     } catch (error) {
@@ -42,7 +42,7 @@ export function useDB() {
       };
 
       tasks[taskIndex] = updatedTask;
-      await SecureStore.setItemAsync(TASKS_KEY, JSON.stringify(tasks));
+      await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
 
       return updatedTask;
     } catch (error) {
@@ -53,15 +53,19 @@ export function useDB() {
 
   const getAllTasks = async (): Promise<Task[]> => {
     try {
-      const tasksJson = await SecureStore.getItemAsync(TASKS_KEY);
-
-      if (!tasksJson) {
-        return [];
+      const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+      if (tasksJSON) {
+        const tasks = JSON.parse(tasksJSON);
+        // Convert date strings back to Date objects
+        return tasks.map((task: any) => ({
+          ...task,
+          date: new Date(task.date),
+          createdAt: new Date(task.createdAt),
+        }));
       }
-
-      return JSON.parse(tasksJson) as Task[];
+      return [];
     } catch (error) {
-      console.error("Error getting tasks:", error);
+      console.error("Error loading tasks:", error);
       return [];
     }
   };
@@ -86,11 +90,20 @@ export function useDB() {
         return false;
       }
 
-      await SecureStore.setItemAsync(TASKS_KEY, JSON.stringify(filteredTasks));
+      await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(filteredTasks));
       return true;
     } catch (error) {
       console.error("Error deleting task:", error);
       throw new Error("Failed to delete task");
+    }
+  };
+
+  const clearAllTasks = async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem(TASKS_STORAGE_KEY);
+    } catch (error) {
+      console.error("Error clearing tasks:", error);
+      throw error;
     }
   };
 
@@ -100,6 +113,7 @@ export function useDB() {
     getAllTasks,
     getTaskById,
     deleteTask,
+    clearAllTasks,
   };
 }
 
