@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useDB } from '@/hooks/local-db';
 import { Task } from '@/types/task-types';
+import GradientContainer from '@/components/GradientContainer';
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -63,10 +64,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <LinearGradient
-      colors={['#0f0c29', '#302b63', '#24243e']}
-      style={styles.container}
-    >
+    <GradientContainer>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           {/* Header with gradient text */}
@@ -125,7 +123,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </GradientContainer>
   );
 }
 
