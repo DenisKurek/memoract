@@ -9,13 +9,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import GradientContainer from '@/components/GradientContainer';
 
 export default function HomeScreen() {
   return (
-    <LinearGradient
-      colors={['#0f0c29', '#302b63', '#24243e']}
-      style={styles.container}
-    >
+    <GradientContainer>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           <View style={styles.header}>
@@ -50,7 +48,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </GradientContainer>
   );
 }
 
