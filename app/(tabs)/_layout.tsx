@@ -24,6 +24,12 @@ export default function TabLayout() {
           title: 'Task',
         }}
       />
+      <Tabs.Screen
+        name="task-list"
+        options={{
+          title: 'Task List',
+        }}
+      />
     </Tabs>
   );
 }
