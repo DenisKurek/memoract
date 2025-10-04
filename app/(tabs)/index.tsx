@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Text, View, Button, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { navigationRef } from '../../navigationRef';
 import { useRouter } from 'expo-router';
 
 Notifications.setNotificationHandler({
