@@ -1,19 +1,5 @@
+import { Task } from "@/types/task-types";
 import * as SecureStore from "expo-secure-store";
-
-export enum CompletionMethod {
-  QR_CODE = "QR_CODE",
-  GEOLOCATION = "GEOLOCATION",
-  FACE_ID = "FACE_ID",
-  PHOTO = "PHOTO",
-}
-
-export type Task = {
-  id: string;
-  title: string;
-  description: string;
-  datetime: string;
-  completionMethod: CompletionMethod;
-};
 
 const TASKS_KEY = "memoract_tasks";
 
@@ -117,9 +103,6 @@ export function useDB() {
   };
 }
 
-/**
- * Generate a unique ID for tasks
- */
 function generateId(): string {
   return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
