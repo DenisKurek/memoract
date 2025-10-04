@@ -19,6 +19,7 @@ export default function RootLayout() {
       <Stack ref={navigationRef}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="add-task" options={{ title: 'Add New Task' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
