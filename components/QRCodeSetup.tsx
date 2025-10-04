@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Share } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,7 +14,6 @@ interface QRCodeSetupProps {
 
 export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCodeSetupProps) {
   const [qrData] = useState(`memoract_task_${taskId}_${Date.now()}`);
-  let qrRef: any = null;
 
   const handleSaveQR = async () => {
     try {
@@ -57,7 +56,7 @@ export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCode
           </View>
 
           <Text style={styles.subtitle}>
-            Save or print this QR code. You'll need to scan it to verify task completion.
+            Save or print this QR code. You&apos;ll need to scan it to verify task completion.
           </Text>
 
           <View style={styles.qrContainer}>
@@ -66,7 +65,6 @@ export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCode
               size={250}
               backgroundColor="white"
               color="black"
-              getRef={(ref) => (qrRef = ref)}
             />
           </View>
 
@@ -163,4 +161,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-

@@ -28,7 +28,7 @@ function FaceIDSetup({ visible, onClose, onSave }: FaceIDSetupProps) {
 
     Alert.alert(
       'Face Captured',
-      'Your face has been registered. You\'ll need to scan your face again to verify this task.',
+      "Your face has been registered. You'll need to scan your face again to verify this task.",
       [
         {
           text: 'OK',

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
@@ -14,9 +13,9 @@ interface LocationSetupProps {
 
 export default function LocationSetup({ visible, onClose, onSave }: LocationSetupProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationName, setLocationName] = useState('');
 
   useEffect(() => {
     if (visible) {
@@ -38,27 +37,29 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-      setCurrentLocation(currentPos);
+
+      // Get address from coordinates
+      try {
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        if (addresses.length > 0) {
+          const addr = addresses[0];
+          const addressStr = [addr.street, addr.city, addr.region].filter(Boolean).join(', ');
+          currentPos.address = addressStr;
+          setLocationName(addressStr);
+        }
+      } catch {
+        console.log('Could not get address');
+      }
+
       setSelectedLocation(currentPos);
     } catch (error) {
       console.error('Error getting location:', error);
       alert('Failed to get current location');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMapPress = (event: any) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    setSelectedLocation({ latitude, longitude });
-  };
-
-  const handleSaveLocation = () => {
-    if (selectedLocation) {
-      onSave(selectedLocation);
-      onClose();
-    } else {
-      alert('Please select a location on the map');
     }
   };
 
@@ -71,6 +72,7 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
       if (results.length > 0) {
         const { latitude, longitude } = results[0];
         setSelectedLocation({ latitude, longitude, address: searchQuery });
+        setLocationName(searchQuery);
       } else {
         alert('Location not found');
       }
@@ -79,6 +81,22 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
       alert('Failed to search location');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openInGoogleMaps = () => {
+    if (selectedLocation) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${selectedLocation.latitude},${selectedLocation.longitude}`;
+      Linking.openURL(url);
+    }
+  };
+
+  const handleSaveLocation = () => {
+    if (selectedLocation) {
+      onSave(selectedLocation);
+      onClose();
+    } else {
+      alert('Please select a location');
     }
   };
 
@@ -93,7 +111,7 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
         </View>
 
         <Text style={styles.subtitle}>
-          Pin the location where you need to verify this task
+          Use current location or search for an address
         </Text>
 
         {/* Search Bar */}
@@ -111,36 +129,70 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
           </TouchableOpacity>
         </View>
 
-        {/* Map */}
+        {/* Location Display */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#8a2be2" />
+            <Text style={styles.loadingText}>Getting location...</Text>
           </View>
-        ) : currentLocation ? (
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            onPress={handleMapPress}
-          >
-            {selectedLocation && (
-              <Marker
-                coordinate={{
-                  latitude: selectedLocation.latitude,
-                  longitude: selectedLocation.longitude,
-                }}
-                pinColor="#8a2be2"
-              />
-            )}
-          </MapView>
+        ) : selectedLocation ? (
+          <View style={styles.locationInfoContainer}>
+            <View style={styles.mapPlaceholder}>
+              <Ionicons name="location" size={80} color="#8a2be2" />
+              <View style={styles.coordinatesBox}>
+                <Text style={styles.coordinatesLabel}>Selected Location:</Text>
+                {locationName ? (
+                  <Text style={styles.locationName}>{locationName}</Text>
+                ) : null}
+                <Text style={styles.coordinatesText}>
+                  Lat: {selectedLocation.latitude.toFixed(6)}
+                </Text>
+                <Text style={styles.coordinatesText}>
+                  Lng: {selectedLocation.longitude.toFixed(6)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={getCurrentLocation}
+              >
+                <LinearGradient
+                  colors={['#8a2be2', '#00cfff']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  <Ionicons name="locate" size={20} color="#fff" />
+                  <Text style={styles.buttonText}>Use Current Location</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={openInGoogleMaps}
+              >
+                <LinearGradient
+                  colors={['#6a1b9a', '#8e24aa']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  <Ionicons name="map" size={20} color="#fff" />
+                  <Text style={styles.buttonText}>View in Google Maps</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
         ) : (
           <View style={styles.loadingContainer}>
-            <Text style={styles.errorText}>Failed to load map</Text>
+            <Ionicons name="location-outline" size={60} color="#ff6b6b" />
+            <Text style={styles.errorText}>Failed to get location</Text>
+            <TouchableOpacity onPress={getCurrentLocation} style={styles.retryButton}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -148,7 +200,7 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
         <View style={styles.instructions}>
           <Ionicons name="information-circle" size={20} color="#00cfff" />
           <Text style={styles.instructionText}>
-            Tap on the map or use search to select a location
+            Use current location, search for an address, or view in Google Maps to verify
           </Text>
         </View>
 
@@ -199,38 +251,99 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(138, 43, 226, 0.3)',
   },
   searchButton: {
     backgroundColor: '#8a2be2',
     borderRadius: 12,
-    width: 48,
+    width: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  map: {
+  locationInfoContainer: {
     flex: 1,
-    borderRadius: 16,
+    gap: 16,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    backgroundColor: 'rgba(138, 43, 226, 0.1)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(138, 43, 226, 0.3)',
+    borderStyle: 'dashed',
+    padding: 20,
+  },
+  coordinatesBox: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  coordinatesLabel: {
+    fontSize: 14,
+    color: '#aaa',
+    marginBottom: 8,
+  },
+  locationName: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  coordinatesText: {
+    fontSize: 14,
+    color: '#00cfff',
+    fontFamily: 'monospace',
+    marginVertical: 2,
+  },
+  actionButtonsContainer: {
+    gap: 12,
+  },
+  actionButton: {
+    borderRadius: 12,
     overflow: 'hidden',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
+    gap: 16,
+  },
+  loadingText: {
+    color: '#aaa',
+    fontSize: 16,
+    marginTop: 12,
   },
   errorText: {
-    color: '#aaa',
+    color: '#ff6b6b',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  retryButton: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#8a2be2',
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
     fontSize: 14,
+    fontWeight: '600',
   },
   instructions: {
     flexDirection: 'row',
@@ -239,18 +352,17 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: 'rgba(0, 207, 255, 0.1)',
     borderRadius: 12,
-    marginTop: 16,
+    marginBottom: 16,
   },
   instructionText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: '#00cfff',
+    lineHeight: 18,
   },
   saveButton: {
     borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 16,
-    marginBottom: 20,
   },
   buttonGradient: {
     flexDirection: 'row',
@@ -265,4 +377,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-

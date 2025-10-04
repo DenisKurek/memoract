@@ -106,7 +106,7 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
           </View>
 
           <Text style={styles.subtitle}>
-            Take or select a photo. You'll need to take a similar photo later to verify the task.
+            Take or select a photo. You&apos;ll need to take a similar photo later to verify the task.
           </Text>
 
           {photoUri ? (
