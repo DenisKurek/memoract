@@ -1,13 +1,27 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { Task, TASKS } from '../../components/types';
+import { View, Text, FlatList, StyleSheet} from 'react-native';
 import DeleteModal from '../../components/DeleteModal';
 import TaskCard from '../../components/TaskCard';
+import { Task } from '@/types/task-types';
+import { useDB } from '@/hooks/local-db';
+import { LinearGradient } from 'expo-linear-gradient';
+import GradientContainer from '@/components/GradientContainer';
 
 export default function TaskListTab() {
-    const [tasks, setTasks] = React.useState(TASKS);
+    const [tasks, setTasks] = React.useState<Task[]>([]);
     const [modalVisible, setModalVisible] = React.useState<boolean>(false);
     const [taskToDelete, setTaskToDelete] = React.useState<Task | null>(null);
+    const db = useDB();
+
+    React.useEffect(() => {
+      const fetchTasks = async () => {
+         const tasks = await db.getAllTasks();
+         console.log('Fetched tasks:', tasks);
+            setTasks(tasks);
+        }
+        fetchTasks();
+    }, []);
+            
 
     const handleDeleteTask = (task: Task) => {
         setTaskToDelete(task);
@@ -15,6 +29,8 @@ export default function TaskListTab() {
     };
 
     const confirmDelete = () => {
+        if (!taskToDelete) return;
+        db.deleteTask(taskToDelete.id);
         setTasks((prev:Task[]) => prev.filter((task) => task.id !== taskToDelete?.id));
         setModalVisible(false);
         setTaskToDelete(null);
@@ -26,7 +42,7 @@ export default function TaskListTab() {
     };
 
     return (
-        <View style={styles.container}>
+        <GradientContainer>
             <Text style={styles.headerTitle}>Task List</Text>
             <Text style={styles.headerSubtitle}>{tasks.length} tasks to remember</Text>
             <FlatList
@@ -40,14 +56,13 @@ export default function TaskListTab() {
             />
             <DeleteModal modalVisible={modalVisible} taskToDelete={taskToDelete}
                 confirmDelete={confirmDelete} cancelDelete={cancelDelete} />
-        </View>
+        </GradientContainer>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'linear-gradient(180deg, #181e3a 0%, #1a225a 100%)',
         alignItems: 'center',
         paddingTop: 40,
         paddingHorizontal: 12,

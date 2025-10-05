@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button } from 'react-native';
+import { Text, TextInput, Button } from 'react-native';
 import { useLocalSearchParams, usePathname } from 'expo-router';
+import { useDB } from '@/hooks/local-db';
+import { CompletionMethodType } from '@/types/task-types';
+import GradientContainer from '@/components/GradientContainer';
 
 
 export default function TaskPage() {
   const { taskId } = useLocalSearchParams();
   const [value, setValue] = useState('');
+  const db = useDB();
 
   const pathname = usePathname();
   console.log('Current route:', pathname);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#222' }}>
+    <GradientContainer>
       <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#fff' }}>
         Task ID: {taskId}
       </Text>
@@ -23,7 +27,18 @@ export default function TaskPage() {
         value={value}
         onChangeText={setValue}
       />
-      <Button title="Submit" onPress={() => alert(`Submitted: ${value}`)} />
-    </View>
+      <Button title="Submit" onPress={async () => {
+        const resposnte = await db.saveTask({
+          title: "ala ma kota",
+          description: 'Sample task description',
+          date: new Date(),
+          time: '12:00',
+          completionMethod: CompletionMethodType.PHOTO,
+          createdAt: new Date(),
+          completed: false,
+        })
+        console.log('Submitted value:', resposnte);
+      }} />
+    </GradientContainer>
   );
 }

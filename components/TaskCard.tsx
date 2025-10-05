@@ -1,44 +1,69 @@
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { Task ,getMethodIcon} from './types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Task, CompletionMethodType } from '@/types/task-types';
+import { Ionicons } from '@expo/vector-icons';
 
 type TaskCardProps = {
     task: Task,
     onDelete: (task:Task) => void,
 }
-export default function TaskCard(props: TaskCardProps) {
-    const { task, onDelete } = props;
-    return (<View style={styles.card}>
-        <View style={styles.cardHeader}>
-            <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{task.title}</Text>
-                <Text style={styles.cardDesc}>{task.description}</Text>
-            </View>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(task)}>
-                <Text style={styles.deleteIcon}>🗑️</Text>
-            </TouchableOpacity>
-        </View>
-        <View style={styles.metaRow}>
-            <View style={styles.metaBox}>
-                <Text style={styles.metaIcon}>📅</Text>
-                <Text style={styles.metaText}>{task.date}</Text>
-            </View>
-            <View style={styles.metaBox}>
-                <Text style={styles.metaIcon}>⏰</Text>
-                <Text style={styles.metaText}>{task.time}</Text>
-            </View>
-            <View style={styles.metaBoxPhoto}>
-                {getMethodIcon(task.completionMethod)}
-            </View>
-        </View>
-    </View>
-    );
+export default function TaskCard(props:TaskCardProps) {
+        const { task, onDelete } = props;
+        return (
+            <LinearGradient
+                colors={['rgba(59,130,246,0.10)', 'rgba(168,85,247,0.10)', 'rgba(20,184,166,0.10)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.card}
+            >
+                <View style={styles.cardHeader}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.cardTitle}>{task.title}</Text>
+                        <Text style={styles.cardDesc}>{task.description}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(task)}>
+                        <Ionicons name="trash-outline" size={16} color="rgb(252,165,165)" />;
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.metaRow}>
+                    <View style={styles.metaBoxDate}>
+                        <Ionicons name="calendar-outline" size={16} style={styles.dateText} />;
+                        <Text style={styles.dateText}>
+                            {task.date? task.date.toLocaleDateString() : ''}
+                        </Text>
+                    </View>
+                    <View style={styles.metaBoxTime
+                    }>
+                        <Ionicons name="time-outline" size={16} style={styles.timeText} />;
+                         <Text style={styles.timeText}>
+                            {task.time? task.time: ''}
+                        </Text>
+                    </View>
+                    <View style={styles.metaBoxCategory}>
+                        <Ionicons name={getMethodIcon(task.completionMethod)} size={16} style={styles.categoryText}></Ionicons>
+                         <Text style={styles.categoryText}>{task.completionMethod}</Text>
+                    </View>
+                </View>
+            </LinearGradient>
+        );
 }
+
+export const getMethodIcon = (method:CompletionMethodType) => {
+  switch (method) {
+    case CompletionMethodType.QR_CODE:
+        return "qr-code-outline";
+    case CompletionMethodType.PHOTO:
+      return "camera-outline";
+    case CompletionMethodType.FACE_ID:
+      return "scan-outline";
+    case CompletionMethodType.GEOLOCATION:
+      return "location-outline";
+};}
 
 const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
     card: {
-        width: width - 32,
-        backgroundColor: 'rgba(44, 62, 80, 0.85)',
+        width: width - 64,
         borderRadius: 22,
         padding: 18,
         marginBottom: 18,
@@ -46,7 +71,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 12,
         borderWidth: 1,
-        borderColor: 'rgba(120, 120, 255, 0.13)',
+        borderColor: 'rgb(96,165,250,0.2)',
     },
     cardHeader: {
         flexDirection: 'row',
@@ -67,7 +92,7 @@ const styles = StyleSheet.create({
     deleteBtn: {
         backgroundColor: 'rgba(255, 0, 0, 0.08)',
         borderRadius: 16,
-        padding: 8,
+        padding: 12,
         marginLeft: 8,
     },
     deleteIcon: {
@@ -75,26 +100,52 @@ const styles = StyleSheet.create({
         color: '#ff6b81',
     },
     metaRow: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         marginTop: 8,
         gap: 8,
     },
-    metaBox: {
+    metaBoxDate: {
         flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 255, 255, 0.08)',
+        flexWrap: 'wrap',
+        backgroundColor: 'rgb(20,184,166,0.1)',
+        color: 'rgb(94,234,212)',
+        alignSelf: 'flex-start',
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 6,
         marginRight: 8,
     },
-    metaBoxPhoto: {
+    dateText: {
+        color: 'rgb(94,234,212)',
+        marginRight: 8,
+    },
+    metaBoxTime: {
         flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(120, 80, 255, 0.13)',
+        flexWrap: 'wrap',
+        alignSelf: 'flex-start',
+        backgroundColor: 'background-color: rgb(59,130,246,0.1);',
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 6,
+        marginRight: 8,
+    },
+    timeText: {
+        color: 'rgb(147,197,253)',
+        marginRight: 8,
+    },
+    metaBoxCategory: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgb(168,85,247,0.1);;',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        marginRight: 8,
+    },
+    categoryText: {
+        color: 'rgb(233,213,255)',
+        marginRight: 8,
     },
     metaIcon: {
         fontSize: 16,
