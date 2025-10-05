@@ -7,8 +7,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
-  Modal,
-  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +23,7 @@ import LocationSetup from "./LocationSetup";
 import PhotoSetup from "./PhotoSetup";
 import FaceIDSetup from "./FaceIDSetup";
 import GradientContainer from "./GradientContainer";
+import SuccessCheckmark from "./SuccessCheckmark";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -37,7 +36,7 @@ export default function AddNewTask() {
   const [showMethodPicker, setShowMethodPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Setup modals for different completion methods
@@ -53,7 +52,6 @@ export default function AddNewTask() {
   const [faceIDData, setFaceIDData] = useState<string | undefined>();
 
   const { saveTask } = useDB();
-  const scaleAnim = useState(new Animated.Value(0))[0];
   const taskIdRef = useState(`task_${Date.now()}`)[0];
 
   const headerHeight = useHeaderHeight?.() ?? 0;
@@ -170,30 +168,18 @@ export default function AddNewTask() {
         faceData: faceIDData,
       });
 
-      setShowSuccessModal(true);
-      Animated.sequence([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 3,
-          useNativeDriver: true,
-        }),
-        Animated.delay(1000),
-        Animated.timing(scaleAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setShowSuccessModal(false);
-        router.push("/(tabs)/task-list");
-      });
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error saving task:", error);
       alert("Failed to save task. Please try again.");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    router.push("/(tabs)/task-list");
   };
 
   const getCompletionMethodStatus = () => {
@@ -422,18 +408,7 @@ export default function AddNewTask() {
         onSave={setFaceIDData}
       />
 
-      <Modal visible={showSuccessModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <Animated.View
-            style={[styles.successContainer, { transform: [{ scale: scaleAnim }] }]}
-          >
-            <View style={styles.successCircle}>
-              <Ionicons name="checkmark" size={60} color="#fff" />
-            </View>
-            <Text style={styles.successText}>Task Added!</Text>
-          </Animated.View>
-        </View>
-      </Modal>
+      <SuccessCheckmark visible={showSuccess} onComplete={handleSuccessComplete} />
     </GradientContainer>
   );
 }

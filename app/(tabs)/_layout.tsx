@@ -3,7 +3,7 @@ import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function TabLayout() {
+const TabLayout = () => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -58,4 +58,6 @@ export default function TabLayout() {
       />
     </Tabs>
   );
-}
+};
+
+export default TabLayout;

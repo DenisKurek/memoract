@@ -4,6 +4,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { saveVerificationData } from '@/hooks/local-db';
+import SuccessCheckmark from './SuccessCheckmark';
 
 interface QRCodeSetupProps {
   visible: boolean;
@@ -14,19 +15,22 @@ interface QRCodeSetupProps {
 
 export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCodeSetupProps) {
   const [qrData] = useState(`memoract_task_${taskId}_${Date.now()}`);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSaveQR = async () => {
     try {
       // Save QR data to secure storage
       await saveVerificationData(`qr_${taskId}`, qrData);
-      
-      onSave(qrData);
-      alert('QR Code saved! You can scan it later to verify this task.');
-      onClose();
+      setShowSuccess(true);
     } catch (error) {
       console.error('Error saving QR code:', error);
-      alert('Failed to save QR code');
     }
+  };
+
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    onSave(qrData);
+    onClose();
   };
 
   const handleShareQR = async () => {
@@ -89,6 +93,8 @@ export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCode
             </TouchableOpacity>
           </View>
         </View>
+
+        <SuccessCheckmark visible={showSuccess} onComplete={handleSuccessComplete} />
       </View>
     </Modal>
   );

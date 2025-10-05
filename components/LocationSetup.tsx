@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator, Linking, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { LocationData } from '@/types/task-types';
 import { saveVerificationData } from '@/hooks/local-db';
+import SuccessCheckmark from './SuccessCheckmark';
 
 interface LocationSetupProps {
   visible: boolean;
@@ -13,10 +14,11 @@ interface LocationSetupProps {
 }
 
 export default function LocationSetup({ visible, onClose, onSave }: LocationSetupProps) {
-  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [locationName, setLocationName] = useState('');
+  const [marker, setMarker] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -29,15 +31,17 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        alert('Permission to access location was denied');
+        // Alert.alert('Permission Denied', 'Permission to access location was denied');
         return;
       }
 
       const location = await Location.getCurrentPositionAsync({});
-      const currentPos: LocationData = {
+      const currentPos = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
+
+      setMarker(currentPos);
 
       // Get address from coordinates
       try {
@@ -48,17 +52,14 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
         if (addresses.length > 0) {
           const addr = addresses[0];
           const addressStr = [addr.street, addr.city, addr.region].filter(Boolean).join(', ');
-          currentPos.address = addressStr;
           setLocationName(addressStr);
         }
       } catch {
         console.log('Could not get address');
       }
-
-      setSelectedLocation(currentPos);
     } catch (error) {
       console.error('Error getting location:', error);
-      alert('Failed to get current location');
+      // Alert.alert('Error', 'Failed to get current location');
     } finally {
       setLoading(false);
     }
@@ -72,163 +73,166 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
       const results = await Location.geocodeAsync(searchQuery);
       if (results.length > 0) {
         const { latitude, longitude } = results[0];
-        setSelectedLocation({ latitude, longitude, address: searchQuery });
+        setMarker({ latitude, longitude });
         setLocationName(searchQuery);
       } else {
-        alert('Location not found');
+        // Alert.alert('Not Found', 'Location not found');
       }
     } catch (error) {
       console.error('Error searching location:', error);
-      alert('Failed to search location');
+      // Alert.alert('Error', 'Failed to search location');
     } finally {
       setLoading(false);
     }
   };
 
-  const openInGoogleMaps = () => {
-    if (selectedLocation) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${selectedLocation.latitude},${selectedLocation.longitude}`;
+  const openInOpenStreetMap = () => {
+    if (marker) {
+      const url = `https://www.openstreetmap.org/?mlat=${marker.latitude}&mlon=${marker.longitude}#map=16/${marker.latitude}/${marker.longitude}`;
       Linking.openURL(url);
     }
   };
 
   const handleSaveLocation = async () => {
-    if (selectedLocation) {
+    if (marker) {
       try {
+        const locationToSave: LocationData = {
+          latitude: marker.latitude,
+          longitude: marker.longitude,
+          address: locationName || `${marker.latitude.toFixed(6)}, ${marker.longitude.toFixed(6)}`,
+        };
+
         // Save location to secure storage
-        await saveVerificationData(`location_${Date.now()}`, selectedLocation);
-        onSave(selectedLocation);
-        onClose();
+        await saveVerificationData(`location_${Date.now()}`, locationToSave);
+        setShowSuccess(true);
       } catch (error) {
         console.error('Error saving location:', error);
-        alert('Failed to save location');
       }
-    } else {
-      alert('Please select a location');
     }
   };
 
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    if (marker) {
+      const locationToSave: LocationData = {
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        address: locationName || `${marker.latitude.toFixed(6)}, ${marker.longitude.toFixed(6)}`,
+      };
+      onSave(locationToSave);
+    }
+    onClose();
+  };
+
   return (
-    <Modal visible={visible} animationType="slide">
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Select Location</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close-circle" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.subtitle}>
-          Use current location or search for an address
-        </Text>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for a location..."
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-          />
-          <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-            <Ionicons name="search" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Location Display */}
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8a2be2" />
-            <Text style={styles.loadingText}>Getting location...</Text>
-          </View>
-        ) : selectedLocation ? (
-          <View style={styles.locationInfoContainer}>
-            <View style={styles.mapPlaceholder}>
-              <Ionicons name="location" size={80} color="#8a2be2" />
-              <View style={styles.coordinatesBox}>
-                <Text style={styles.coordinatesLabel}>Selected Location:</Text>
-                {locationName ? (
-                  <Text style={styles.locationName}>{locationName}</Text>
-                ) : null}
-                <Text style={styles.coordinatesText}>
-                  Lat: {selectedLocation.latitude.toFixed(6)}
-                </Text>
-                <Text style={styles.coordinatesText}>
-                  Lng: {selectedLocation.longitude.toFixed(6)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionButtonsContainer}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={getCurrentLocation}
-              >
-                <LinearGradient
-                  colors={['#8a2be2', '#00cfff']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  <Ionicons name="locate" size={20} color="#fff" />
-                  <Text style={styles.buttonText}>Use Current Location</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={openInGoogleMaps}
-              >
-                <LinearGradient
-                  colors={['#6a1b9a', '#8e24aa']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  <Ionicons name="map" size={20} color="#fff" />
-                  <Text style={styles.buttonText}>View in Google Maps</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.loadingContainer}>
-            <Ionicons name="location-outline" size={60} color="#ff6b6b" />
-            <Text style={styles.errorText}>Failed to get location</Text>
-            <TouchableOpacity onPress={getCurrentLocation} style={styles.retryButton}>
-              <Text style={styles.retryText}>Retry</Text>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
+      <LinearGradient
+        colors={['#0f0c29', '#302b63', '#24243e']}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Select Location</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close-circle" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* Instructions */}
-        <View style={styles.instructions}>
-          <Ionicons name="information-circle" size={20} color="#00cfff" />
-          <Text style={styles.instructionText}>
-            Use current location, search for an address, or view in Google Maps to verify
+          <Text style={styles.subtitle}>
+            Use your current location or search for an address
           </Text>
-        </View>
 
-        {/* Save Button */}
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSaveLocation}
-          disabled={!selectedLocation}
-        >
-          <LinearGradient
-            colors={selectedLocation ? ['#4CAF50', '#45a049'] : ['#555', '#444']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
-          >
-            <Ionicons name="checkmark-circle" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Save Location</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for a location..."
+              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+            />
+            <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+              <Ionicons name="search" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Map Preview */}
+          {marker && (
+            <View style={styles.mapContainer}>
+              <View style={styles.mapPreview}>
+                <Ionicons name="location" size={80} color="#8a2be2" />
+                <Text style={styles.coordinatesText}>
+                  📍 {marker.latitude.toFixed(6)}, {marker.longitude.toFixed(6)}
+                </Text>
+                <TouchableOpacity
+                  style={styles.viewMapButton}
+                  onPress={openInOpenStreetMap}
+                >
+                  <Ionicons name="map-outline" size={20} color="#00cfff" />
+                  <Text style={styles.viewMapText}>View on OpenStreetMap</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Selected Location Info */}
+          {marker && (
+            <View style={styles.locationInfo}>
+              <View style={styles.locationInfoHeader}>
+                <Ionicons name="location" size={24} color="#00cfff" />
+                <Text style={styles.locationInfoTitle}>Selected Location</Text>
+              </View>
+              <Text style={styles.locationInfoText}>
+                {locationName || `${marker.latitude.toFixed(6)}, ${marker.longitude.toFixed(6)}`}
+              </Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={getCurrentLocation}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={['#8a2be2', '#00cfff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="locate" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Use Current Location</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveLocation}
+              disabled={!marker}
+            >
+              <LinearGradient
+                colors={marker ? ['#4CAF50', '#45a049'] : ['#555', '#444']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Save Location</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <SuccessCheckmark visible={showSuccess} onComplete={handleSuccessComplete} />
+      </LinearGradient>
     </Modal>
   );
 }
@@ -236,8 +240,10 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0c29',
+  },
+  scrollContent: {
     padding: 20,
+    paddingTop: 40,
   },
   header: {
     flexDirection: 'row',
@@ -259,7 +265,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
@@ -278,95 +284,75 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  locationInfoContainer: {
-    flex: 1,
-    gap: 16,
-  },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: 'rgba(138, 43, 226, 0.1)',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+  mapContainer: {
+    minHeight: 300,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
     borderWidth: 2,
     borderColor: 'rgba(138, 43, 226, 0.3)',
-    borderStyle: 'dashed',
-    padding: 20,
-  },
-  coordinatesBox: {
-    marginTop: 20,
-    padding: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 12,
+  },
+  mapPreview: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    padding: 40,
+    gap: 16,
   },
-  coordinatesLabel: {
-    fontSize: 14,
-    color: '#aaa',
-    marginBottom: 8,
-  },
-  locationName: {
+  coordinatesText: {
     fontSize: 16,
     color: '#fff',
     fontWeight: '600',
-    marginBottom: 8,
     textAlign: 'center',
   },
-  coordinatesText: {
-    fontSize: 14,
+  viewMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0, 207, 255, 0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 207, 255, 0.5)',
+  },
+  viewMapText: {
     color: '#00cfff',
-    fontFamily: 'monospace',
-    marginVertical: 2,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  locationInfo: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 207, 255, 0.3)',
+  },
+  locationInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  locationInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#00cfff',
+  },
+  locationInfoText: {
+    fontSize: 14,
+    color: '#fff',
+    marginLeft: 32,
   },
   actionButtonsContainer: {
     gap: 12,
+    marginBottom: 20,
   },
   actionButton: {
     borderRadius: 12,
     overflow: 'hidden',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    color: '#aaa',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  errorText: {
-    color: '#ff6b6b',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  retryButton: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#8a2be2',
-    borderRadius: 8,
-  },
-  retryText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  instructions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    backgroundColor: 'rgba(0, 207, 255, 0.1)',
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  instructionText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#00cfff',
-    lineHeight: 18,
   },
   saveButton: {
     borderRadius: 12,

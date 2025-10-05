@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { saveVerificationData } from '@/hooks/local-db';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SuccessCheckmark from './SuccessCheckmark';
 
 interface PhotoSetupProps {
   visible: boolean;
@@ -16,6 +17,7 @@ interface PhotoSetupProps {
 function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const insets = useSafeAreaInsets();
 
@@ -23,7 +25,6 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
-        Alert.alert('Permission Required', 'Camera permission is needed');
         return;
       }
     }
@@ -35,7 +36,6 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
     const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (mediaPermission.status !== 'granted') {
-      Alert.alert('Permission Required', 'Media library permission is needed');
       return;
     }
 
@@ -56,19 +56,21 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
       try {
         // Save photo URI to secure storage
         await saveVerificationData(`photo_${Date.now()}`, photoUri);
-        onSave(photoUri);
-        onClose();
+        setShowSuccess(true);
       } catch (error) {
         console.error('Error saving photo:', error);
-        Alert.alert('Error', 'Failed to save photo');
       }
-    } else {
-      Alert.alert('No Photo', 'Please take or select a photo first');
     }
   };
 
   const handleRetake = () => {
     setPhotoUri(null);
+  };
+
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    onSave(photoUri!);
+    onClose();
   };
 
   if (showCamera) {
@@ -178,6 +180,8 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
             )}
           </View>
         </View>
+
+        <SuccessCheckmark visible={showSuccess} onComplete={handleSuccessComplete} />
       </View>
     </Modal>
   );
