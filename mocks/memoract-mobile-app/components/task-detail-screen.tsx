@@ -1,59 +1,74 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowLeft, Camera, MapPin, Scan, QrCode, CheckCircle2, X, AlertCircle } from "lucide-react"
-import type { Task } from "./task-list-screen"
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  MapPin,
+  QrCode,
+  Scan,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import type { Task } from "./task-list-screen";
 
 interface TaskDetailScreenProps {
-  task: Task
-  onBack: () => void
-  onComplete: (taskId: string) => void
+  task: Task;
+  onBack: () => void;
+  onComplete: (taskId: string) => void;
 }
 
-export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenProps) {
-  const [isCompleting, setIsCompleting] = useState(false)
-  const [completionStep, setCompletionStep] = useState<"idle" | "processing" | "success" | "failed">("idle")
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
-  const [failedAttempts, setFailedAttempts] = useState(0)
-  const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false)
+export function TaskDetailScreen({
+  task,
+  onBack,
+  onComplete,
+}: TaskDetailScreenProps) {
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completionStep, setCompletionStep] = useState<
+    "idle" | "processing" | "success" | "failed"
+  >("idle");
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
 
   const handleStartCompletion = () => {
-    setIsCompleting(true)
-    setCompletionStep("processing")
+    setIsCompleting(true);
+    setCompletionStep("processing");
 
     setTimeout(() => {
-      const success = failedAttempts >= 2 ? Math.random() > 0.5 : false
-      setCompletionStep(success ? "success" : "failed")
+      const success = failedAttempts >= 2 ? Math.random() > 0.5 : false;
+      setCompletionStep(success ? "success" : "failed");
 
       if (success) {
         setTimeout(() => {
-          onComplete(task.id)
-        }, 1500)
+          onComplete(task.id);
+        }, 1500);
       } else {
-        setFailedAttempts((prev) => prev + 1)
+        setFailedAttempts((prev) => prev + 1);
       }
-    }, 2000)
-  }
+    }, 2000);
+  };
 
   const handleManualConfirm = () => {
-    setShowManualConfirmDialog(true)
-  }
+    setShowManualConfirmDialog(true);
+  };
 
   const handleConfirmManualCompletion = () => {
-    setShowManualConfirmDialog(false)
-    setCompletionStep("success")
+    setShowManualConfirmDialog(false);
+    setCompletionStep("success");
     setTimeout(() => {
-      onComplete(task.id)
-    }, 1500)
-  }
+      onComplete(task.id);
+    }, 1500);
+  };
 
   const handleCapturePhoto = () => {
     // Simulate photo capture
-    setCapturedImage("/person-face-photo.png")
+    setCapturedImage("/person-face-photo.png");
     setTimeout(() => {
-      handleStartCompletion()
-    }, 500)
-  }
+      handleStartCompletion();
+    }, 500);
+  };
 
   const renderCompletionInterface = () => {
     switch (task.completionMethod) {
@@ -68,12 +83,17 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
                 </h3>
               </div>
               <p className="text-sm text-blue-200/70 mb-4">
-                Take a photo of the reference image. AI will compare and verify if it matches.
+                Take a photo of the reference image. AI will compare and verify
+                if it matches.
               </p>
 
               {capturedImage ? (
                 <div className="relative rounded-xl overflow-hidden border-2 border-teal-400/30 mb-4">
-                  <img src={capturedImage || "/placeholder.svg"} alt="Captured" className="w-full h-64 object-cover" />
+                  <img
+                    src={capturedImage || "/placeholder.svg"}
+                    alt="Captured"
+                    className="w-full h-64 object-cover"
+                  />
                   <button
                     onClick={() => setCapturedImage(null)}
                     className="absolute top-2 right-2 p-2 rounded-lg bg-red-500/80 backdrop-blur-sm hover:bg-red-500 transition-colors"
@@ -87,7 +107,9 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
                   className="w-full h-64 rounded-xl border-2 border-dashed border-purple-400/30 hover:border-purple-400/50 bg-purple-500/5 hover:bg-purple-500/10 transition-all flex flex-col items-center justify-center gap-3"
                 >
                   <Camera className="w-12 h-12 text-purple-300/50" />
-                  <span className="text-sm text-purple-200/70">Tap to capture photo</span>
+                  <span className="text-sm text-purple-200/70">
+                    Tap to capture photo
+                  </span>
                 </button>
               )}
             </div>
@@ -101,7 +123,7 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
               </button>
             )}
           </div>
-        )
+        );
 
       case "geolocation":
         return (
@@ -114,13 +136,15 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
                 </h3>
               </div>
               <p className="text-sm text-blue-200/70 mb-4">
-                Your device will verify if you're at the correct location.
+                Your device will verify if youre at the correct location.
               </p>
 
               {task.location && (
                 <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-400/20 mb-4">
                   <p className="text-sm text-teal-200 mb-2">Target Location:</p>
-                  <p className="text-base font-medium text-teal-100">{task.location}</p>
+                  <p className="text-base font-medium text-teal-100">
+                    {task.location}
+                  </p>
                 </div>
               )}
 
@@ -138,7 +162,7 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
               </button>
             )}
           </div>
-        )
+        );
 
       case "faceid":
         return (
@@ -150,12 +174,18 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
                   Face ID Verification
                 </h3>
               </div>
-              <p className="text-sm text-blue-200/70 mb-4">Position your face within the frame for verification.</p>
+              <p className="text-sm text-blue-200/70 mb-4">
+                Position your face within the frame for verification.
+              </p>
 
               {task.selectedFaceId && (
                 <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-400/20 mb-4">
-                  <p className="text-sm text-blue-200 mb-2">Registered Face ID:</p>
-                  <p className="text-base font-medium text-blue-100">{task.selectedFaceId}</p>
+                  <p className="text-sm text-blue-200 mb-2">
+                    Registered Face ID:
+                  </p>
+                  <p className="text-base font-medium text-blue-100">
+                    {task.selectedFaceId}
+                  </p>
                 </div>
               )}
 
@@ -176,7 +206,7 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
               </button>
             )}
           </div>
-        )
+        );
 
       case "qr":
         return (
@@ -188,7 +218,9 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
                   Scan QR Code
                 </h3>
               </div>
-              <p className="text-sm text-blue-200/70 mb-4">Position the QR code within the frame to scan.</p>
+              <p className="text-sm text-blue-200/70 mb-4">
+                Position the QR code within the frame to scan.
+              </p>
 
               <div className="relative h-64 rounded-xl bg-gradient-to-br from-purple-900/30 to-teal-900/30 border border-purple-400/20 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -212,12 +244,12 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
               </button>
             )}
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const renderCompletionStatus = () => {
     if (completionStep === "processing") {
@@ -229,7 +261,7 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
             <p className="text-sm text-blue-200/60 mt-2">Please wait</p>
           </div>
         </div>
-      )
+      );
     }
 
     if (completionStep === "success") {
@@ -239,11 +271,13 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-teal-500/20 flex items-center justify-center">
               <CheckCircle2 className="w-10 h-10 text-teal-300" />
             </div>
-            <p className="text-lg font-semibold text-teal-200">Task Completed!</p>
+            <p className="text-lg font-semibold text-teal-200">
+              Task Completed!
+            </p>
             <p className="text-sm text-blue-200/60 mt-2">Great job!</p>
           </div>
         </div>
-      )
+      );
     }
 
     if (completionStep === "failed") {
@@ -253,8 +287,12 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
               <X className="w-10 h-10 text-red-300" />
             </div>
-            <p className="text-lg font-semibold text-red-200">Verification Failed</p>
-            <p className="text-sm text-blue-200/60 mt-2">Attempt {failedAttempts} of 2 failed</p>
+            <p className="text-lg font-semibold text-red-200">
+              Verification Failed
+            </p>
+            <p className="text-sm text-blue-200/60 mt-2">
+              Attempt {failedAttempts} of 2 failed
+            </p>
             <div className="flex flex-col gap-3 mt-4">
               {failedAttempts >= 2 ? (
                 <button
@@ -267,9 +305,9 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
               ) : (
                 <button
                   onClick={() => {
-                    setCompletionStep("idle")
-                    setIsCompleting(false)
-                    setCapturedImage(null)
+                    setCompletionStep("idle");
+                    setIsCompleting(false);
+                    setCapturedImage(null);
                   }}
                   className="px-6 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-200 transition-colors"
                 >
@@ -279,14 +317,14 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
             </div>
           </div>
         </div>
-      )
+      );
     }
 
-    return null
-  }
+    return null;
+  };
 
   const renderManualConfirmDialog = () => {
-    if (!showManualConfirmDialog) return null
+    if (!showManualConfirmDialog) return null;
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
@@ -301,7 +339,9 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
             Manual Confirmation
           </h3>
 
-          <p className="text-center text-blue-200/80 mb-6">Czy na pewno chcesz potwierdzić wykonanie taska?</p>
+          <p className="text-center text-blue-200/80 mb-6">
+            Czy na pewno chcesz potwierdzić wykonanie taska?
+          </p>
 
           <div className="flex gap-3">
             <button
@@ -319,8 +359,8 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 p-6 flex flex-col">
@@ -343,13 +383,17 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
       {failedAttempts > 0 && (
         <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-400/20 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-300" />
-          <p className="text-sm text-red-200">Failed attempts: {failedAttempts}/2</p>
+          <p className="text-sm text-red-200">
+            Failed attempts: {failedAttempts}/2
+          </p>
         </div>
       )}
 
       {/* Task Details */}
       <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-teal-500/10 backdrop-blur-sm border border-blue-400/20">
-        {task.description && <p className="text-blue-200/80 mb-4">{task.description}</p>}
+        {task.description && (
+          <p className="text-blue-200/80 mb-4">{task.description}</p>
+        )}
 
         <div className="flex flex-wrap gap-2">
           {task.date && (
@@ -373,5 +417,5 @@ export function TaskDetailScreen({ task, onBack, onComplete }: TaskDetailScreenP
 
       {renderManualConfirmDialog()}
     </div>
-  )
+  );
 }
