@@ -62,13 +62,8 @@ export function useDB() {
   const saveTask = useCallback(
     async (task: Omit<Task, "id">): Promise<Task> => {
       try {
-        console.log('=== SAVING TASK ===');
-        console.log('Task data:', JSON.stringify(task, null, 2));
-
         const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
         const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
-
-        console.log('Existing tasks count:', tasks.length);
 
         const newTask: Task = {
           ...task,
@@ -135,11 +130,11 @@ export function useDB() {
       const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
       if (tasksJSON) {
         const tasks = JSON.parse(tasksJSON);
-        // Convert date strings back to Date objects
+        // Convert datetime strings back to Date objects if needed
         return tasks.map((task: any) => ({
           ...task,
-          date: new Date(task.date),
-          createdAt: new Date(task.createdAt),
+          datetime: task.datetime || task.date, // Support old 'date' field for backward compatibility
+          createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
         }));
       }
       return [];
@@ -149,53 +144,47 @@ export function useDB() {
     }
   }, []);
 
-  const getTaskById = useCallback(
-    async (id: string): Promise<Task | null> => {
-      try {
-        const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
-        const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
-        return tasks.find((t: Task) => t.id === id) || null;
-      } catch (error) {
-        console.error("Error getting task by id:", error);
-        return null;
+  const getTaskById = useCallback(async (id: string): Promise<Task | null> => {
+    try {
+      const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+      const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
+      return tasks.find((t: Task) => t.id === id) || null;
+    } catch (error) {
+      console.error("Error getting task by id:", error);
+      return null;
+    }
+  }, []);
+
+  const deleteTask = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+      const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
+      const filteredTasks = tasks.filter((t: Task) => t.id !== id);
+
+      if (filteredTasks.length === tasks.length) {
+        console.warn(`Task with id ${id} not found`);
+        return false;
       }
-    },
-    []
-  );
 
-  const deleteTask = useCallback(
-    async (id: string): Promise<boolean> => {
-      try {
-        const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
-        const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
-        const filteredTasks = tasks.filter((t: Task) => t.id !== id);
+      await AsyncStorage.setItem(
+        TASKS_STORAGE_KEY,
+        JSON.stringify(filteredTasks)
+      );
+      return true;
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      throw new Error("Failed to delete task");
+    }
+  }, []);
 
-        if (filteredTasks.length === tasks.length) {
-          console.warn(`Task with id ${id} not found`);
-          return false;
-        }
-
-        await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(filteredTasks));
-        return true;
-      } catch (error) {
-        console.error("Error deleting task:", error);
-        throw new Error("Failed to delete task");
-      }
-    },
-    []
-  );
-
-  const clearAllTasks = useCallback(
-    async (): Promise<void> => {
-      try {
-        await AsyncStorage.removeItem(TASKS_STORAGE_KEY);
-      } catch (error) {
-        console.error("Error clearing tasks:", error);
-        throw error;
-      }
-    },
-    []
-  );
+  const clearAllTasks = useCallback(async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem(TASKS_STORAGE_KEY);
+    } catch (error) {
+      console.error("Error clearing tasks:", error);
+      throw error;
+    }
+  }, []);
 
   return {
     saveTask,
@@ -205,6 +194,39 @@ export function useDB() {
     deleteTask,
     clearAllTasks,
   };
+}
+
+/**
+ * Zapisuje wrażliwe dane (np. zdjęcia, QR kody) do Secure Store
+ * @param key unikalny klucz
+ * @param data dowolne dane do zapisania
+ */
+export async function saveVerificationData(
+  key: string,
+  data: any
+): Promise<void> {
+  try {
+    const jsonValue = JSON.stringify(data);
+    await SecureStore.setItemAsync(key, jsonValue);
+  } catch (e) {
+    console.error("Error saving verification data:", e);
+    throw new Error("Failed to save verification data");
+  }
+}
+
+/**
+ * Pobiera wrażliwe dane (np. zdjęcia, QR kody) z Secure Store
+ * @param key unikalny klucz
+ * @returns dane lub null
+ */
+export async function getVerificationData(key: string): Promise<any | null> {
+  try {
+    const jsonValue = await SecureStore.getItemAsync(key);
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (e) {
+    console.error("Error getting verification data:", e);
+    return null;
+  }
 }
 
 function generateId(): string {

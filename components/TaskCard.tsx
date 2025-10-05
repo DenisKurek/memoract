@@ -1,46 +1,85 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Task, CompletionMethodType } from '@/types/task-types';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Task, CompletionMethodType } from "@/types/task-types";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { format, parseISO } from "date-fns";
 
 type TaskCardProps = {
-    task: Task,
-    onDelete: (task:Task) => void,
-}
-export default function TaskCard(props:TaskCardProps) {
-        const { task, onDelete } = props;
-        return (
-            <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.cardTitle}>{task.title}</Text>
-                        <Text style={styles.cardDesc}>{task.description}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(task)}>
-                        <Ionicons name="trash" size={18} color="#FC7A7A" />
-                    </TouchableOpacity>
-                </View>
+  task: Task;
+  onDelete: (task: Task) => void;
+};
+export default function TaskCard(props: TaskCardProps) {
+  const { task, onDelete } = props;
+  const router = useRouter();
 
-                {/* Meta Row - all in column like on screenshot */}
-                <View style={styles.metaRow}>
-                    <View style={[styles.metaPill, styles.datePill]}>
-                        <Ionicons name="calendar-outline" size={18} color="#5AEADC" />
-                        <Text style={styles.metaText}>
-                            {task.date ? new Date(task.date).toISOString().split('T')[0] : ''}
-                        </Text>
-                    </View>
+  const handleCardPress = () => {
+    router.push(`/${task.id}`);
+  };
 
-                    <View style={[styles.metaPill, styles.timePill]}>
-                        <Ionicons name="time-outline" size={18} color="#93C5FD" />
-                        <Text style={styles.metaText}>{task.time || ''}</Text>
-                    </View>
-
-                    <View style={[styles.metaPill, styles.methodPill]}>
-                        <Ionicons name={getMethodIcon(task.completionMethod)} size={18} color="#E9D5FF" />
-                        <Text style={styles.metaText}>{getMethodLabel(task.completionMethod)}</Text>
-                    </View>
-                </View>
-            </View>
-        );
+  return (
+    <TouchableOpacity onPress={handleCardPress} activeOpacity={0.8}>
+      <LinearGradient
+        colors={[
+          "rgba(59,130,246,0.10)",
+          "rgba(168,85,247,0.10)",
+          "rgba(20,184,166,0.10)",
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.card}
+      >
+        <View style={styles.cardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{task.title}</Text>
+            <Text style={styles.cardDesc}>{task.description}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => onDelete(task)}
+          >
+            <Ionicons name="trash-outline" size={16} color="rgb(252,165,165)" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.metaRow}>
+          <View style={styles.metaBoxDate}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              style={styles.dateText}
+            />
+            <Text style={styles.dateText}>
+              {task.datetime
+                ? format(parseISO(task.datetime), "MMM dd, yyyy")
+                : "No date"}
+            </Text>
+          </View>
+          <View style={styles.metaBoxTime}>
+            <Ionicons name="time-outline" size={16} style={styles.timeText} />
+            <Text style={styles.timeText}>
+              {task.datetime
+                ? format(parseISO(task.datetime), "HH:mm")
+                : "No time"}
+            </Text>
+          </View>
+          <View style={styles.metaBoxCategory}>
+            <Ionicons
+              name={getMethodIcon(task.completionMethod)}
+              size={16}
+              style={styles.categoryText}
+            ></Ionicons>
+            <Text style={styles.categoryText}>{task.completionMethod}</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
 }
 
 export const getMethodIcon = (method:CompletionMethodType) => {
@@ -54,91 +93,102 @@ export const getMethodIcon = (method:CompletionMethodType) => {
     case CompletionMethodType.GEOLOCATION:
       return "location-outline";
   }
-}
+};
 
-const getMethodLabel = (method: CompletionMethodType): string => {
-  switch (method) {
-    case CompletionMethodType.QR_CODE:
-      return "QR Code";
-    case CompletionMethodType.PHOTO:
-      return "Photo";
-    case CompletionMethodType.FACE_ID:
-      return "Face ID";
-    case CompletionMethodType.GEOLOCATION:
-      return "Location";
-    default:
-      return "";
-  }
-}
-
+const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: 'rgba(30, 30, 47, 0.95)',
-        borderRadius: 24,
-        padding: 20,
-        marginBottom: 16,
-        marginHorizontal: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(100, 100, 150, 0.2)',
-        elevation: 4,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        marginBottom: 18,
-    },
-    cardTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#E8E9F3',
-        marginBottom: 6,
-        letterSpacing: 0.3,
-    },
-    cardDesc: {
-        fontSize: 16,
-        color: '#A0A4B8',
-        lineHeight: 22,
-    },
-    deleteBtn: {
-        backgroundColor: 'rgba(139, 35, 50, 0.3)',
-        borderRadius: 14,
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginLeft: 12,
-    },
-    metaRow: {
-        flexDirection: 'column',
-        gap: 10,
-        marginTop: 4,
-    },
-    metaPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
-    },
-    datePill: {
-        backgroundColor: 'rgba(20, 184, 166, 0.12)',
-        borderColor: 'rgba(20, 184, 166, 0.25)',
-    },
-    timePill: {
-        backgroundColor: 'rgba(59, 130, 246, 0.12)',
-        borderColor: 'rgba(59, 130, 246, 0.25)',
-    },
-    methodPill: {
-        backgroundColor: 'rgba(168, 85, 247, 0.12)',
-        borderColor: 'rgba(168, 85, 247, 0.25)',
-    },
-    metaText: {
-        fontSize: 15,
-        color: '#E8E9F3',
-        fontWeight: '600',
-        letterSpacing: 0.2,
-    },
+  card: {
+    width: width - 64,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgb(96,165,250,0.2)",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  cardDesc: {
+    fontSize: 15,
+    color: "#b6bfff",
+    marginBottom: 2,
+  },
+  deleteBtn: {
+    backgroundColor: "rgba(255, 0, 0, 0.08)",
+    borderRadius: 16,
+    padding: 12,
+    marginLeft: 8,
+  },
+  deleteIcon: {
+    fontSize: 20,
+    color: "#ff6b81",
+  },
+  metaRow: {
+    flexDirection: "column",
+    marginTop: 8,
+    gap: 8,
+  },
+  metaBoxDate: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: "rgb(20,184,166,0.1)",
+    color: "rgb(94,234,212)",
+    alignSelf: "flex-start",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  dateText: {
+    color: "rgb(94,234,212)",
+    marginRight: 8,
+  },
+  metaBoxTime: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignSelf: "flex-start",
+    backgroundColor: "background-color: rgb(59,130,246,0.1);",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  timeText: {
+    color: "rgb(147,197,253)",
+    marginRight: 8,
+  },
+  metaBoxCategory: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignSelf: "flex-start",
+    backgroundColor: "rgb(168,85,247,0.1);;",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  categoryText: {
+    color: "rgb(233,213,255)",
+    marginRight: 8,
+  },
+  metaIcon: {
+    fontSize: 16,
+    marginRight: 6,
+    color: "#7bb7e6",
+  },
+  metaText: {
+    fontSize: 15,
+    color: "#7bb7e6",
+  },
 });

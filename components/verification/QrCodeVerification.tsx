@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   QrCodeVerificationResult,
   verifyQrCodeWithLLM,
@@ -139,57 +140,63 @@ export default function QrCodeVerification({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="qr-code-outline"
-            size={24}
-            color="#A78BFA"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Scan QR Code</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Position the QR code within the frame to scan.
-        </Text>
-
-        {/* QR Scanner Area */}
-        <View style={styles.scannerContainer}>
-          <View style={styles.scannerFrame}>
-            <View style={styles.scannerBorder}>
-              <View style={[styles.corner, styles.topLeft]} />
-              <View style={[styles.corner, styles.topRight]} />
-              <View style={[styles.corner, styles.bottomLeft]} />
-              <View style={[styles.corner, styles.bottomRight]} />
-            </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.verificationCard}>
+          <View style={styles.header}>
             <Ionicons
-              name="qr-code"
-              size={80}
-              color="rgba(167, 139, 250, 0.3)"
+              name="qr-code-outline"
+              size={24}
+              color="#A78BFA"
+              style={styles.icon}
             />
+            <Text style={styles.title}>Scan QR Code</Text>
+          </View>
+          <Text style={styles.subtitle}>
+            Position the QR code within the frame to scan.
+          </Text>
+
+          {/* QR Scanner Area */}
+          <View style={styles.scannerContainer}>
+            <View style={styles.scannerFrame}>
+              <View style={styles.scannerBorder}>
+                <View style={[styles.corner, styles.topLeft]} />
+                <View style={[styles.corner, styles.topRight]} />
+                <View style={[styles.corner, styles.bottomLeft]} />
+                <View style={[styles.corner, styles.bottomRight]} />
+              </View>
+              <Ionicons
+                name="qr-code"
+                size={80}
+                color="rgba(167, 139, 250, 0.3)"
+              />
+            </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.verifyButton}
+          onPress={handleStartScanning}
+        >
+          <Text style={styles.verifyButtonText}>Start QR Scan</Text>
+        </TouchableOpacity>
+
+        <QrCodeVerificationOverlay
+          visible={showVerificationOverlay}
+          result={verificationResult}
+          onComplete={handleVerificationComplete}
+        />
       </View>
-
-      <TouchableOpacity
-        style={styles.verifyButton}
-        onPress={handleStartScanning}
-      >
-        <Text style={styles.verifyButtonText}>Start QR Scan</Text>
-      </TouchableOpacity>
-
-      <QrCodeVerificationOverlay
-        visible={showVerificationOverlay}
-        result={verificationResult}
-        onComplete={handleVerificationComplete}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
   },
   verificationCard: {

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   PhotoVerificationResult,
   verifyPhotoWithLLM,
@@ -128,6 +129,59 @@ export default function PhotoVerification({
   // Show captured photo preview
   if (capturedPhoto) {
     return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.verificationCard}>
+            <View style={styles.header}>
+              <Ionicons
+                name="camera-outline"
+                size={24}
+                color="#C4B5FD"
+                style={styles.icon}
+              />
+              <Text style={styles.title}>Photo Preview</Text>
+            </View>
+            <Text style={styles.subtitle}>
+              Review your photo and verify it with AI
+            </Text>
+
+            <Image
+              source={{ uri: capturedPhoto }}
+              style={styles.photoPreview}
+            />
+
+            <View style={styles.previewButtons}>
+              <TouchableOpacity
+                style={styles.retakeButton}
+                onPress={retakePhoto}
+              >
+                <Ionicons name="refresh" size={20} color="#C4B5FD" />
+                <Text style={styles.retakeButtonText}>Retake</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.verifyPhotoButton}
+                onPress={handleVerifyPhoto}
+              >
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Text style={styles.verifyPhotoButtonText}>Verify with AI</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <PhotoVerificationOverlay
+            visible={showVerificationOverlay}
+            result={verificationResult}
+            onComplete={handleVerificationComplete}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Initial state - show camera button
+  return (
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.verificationCard}>
           <View style={styles.header}>
@@ -137,82 +191,46 @@ export default function PhotoVerification({
               color="#C4B5FD"
               style={styles.icon}
             />
-            <Text style={styles.title}>Photo Preview</Text>
+            <Text style={styles.title}>Take Photo</Text>
           </View>
           <Text style={styles.subtitle}>
-            Review your photo and verify it with AI
+            Take a photo of the reference image. AI will compare and verify if
+            it matches.
           </Text>
 
-          <Image source={{ uri: capturedPhoto }} style={styles.photoPreview} />
-
-          <View style={styles.previewButtons}>
-            <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
-              <Ionicons name="refresh" size={20} color="#C4B5FD" />
-              <Text style={styles.retakeButtonText}>Retake</Text>
-            </TouchableOpacity>
-
+          {/* Camera Area */}
+          <View style={styles.cameraContainer}>
             <TouchableOpacity
-              style={styles.verifyPhotoButton}
-              onPress={handleVerifyPhoto}
+              style={styles.cameraButton}
+              onPress={handleStartCamera}
             >
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.verifyPhotoButtonText}>Verify with AI</Text>
+              <Ionicons
+                name="camera"
+                size={48}
+                color="rgba(196, 181, 253, 0.5)"
+              />
+              <Text style={styles.cameraText}>Tap to capture photo</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <PhotoVerificationOverlay
-          visible={showVerificationOverlay}
-          result={verificationResult}
-          onComplete={handleVerificationComplete}
-        />
+        <TouchableOpacity
+          style={styles.verifyButton}
+          onPress={handleStartCamera}
+        >
+          <Text style={styles.verifyButtonText}>Take Photo</Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
-
-  // Initial state - show camera button
-  return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="camera-outline"
-            size={24}
-            color="#C4B5FD"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Take Photo</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Take a photo of the reference image. AI will compare and verify if it
-          matches.
-        </Text>
-
-        {/* Camera Area */}
-        <View style={styles.cameraContainer}>
-          <TouchableOpacity
-            style={styles.cameraButton}
-            onPress={handleStartCamera}
-          >
-            <Ionicons
-              name="camera"
-              size={48}
-              color="rgba(196, 181, 253, 0.5)"
-            />
-            <Text style={styles.cameraText}>Tap to capture photo</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.verifyButton} onPress={handleStartCamera}>
-        <Text style={styles.verifyButtonText}>Take Photo</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
   },
   verificationCard: {

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   FaceVerificationResult,
   verifyFaceWithLLM,
@@ -168,83 +169,89 @@ export default function FaceIdVerification({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="scan-outline"
-            size={24}
-            color="#93C5FD"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Face ID Verification</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Position your face within the frame for verification.
-        </Text>
-
-        {capturedPhoto ? (
-          <View style={styles.photoPreviewContainer}>
-            <Image
-              source={{ uri: capturedPhoto }}
-              style={styles.photoPreview}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.verificationCard}>
+          <View style={styles.header}>
+            <Ionicons
+              name="scan-outline"
+              size={24}
+              color="#93C5FD"
+              style={styles.icon}
             />
-            <View style={styles.photoOverlay}>
-              <TouchableOpacity
-                style={styles.retakeButton}
-                onPress={retakePhoto}
-              >
-                <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.retakeText}>Retake</Text>
-              </TouchableOpacity>
-            </View>
-            {isProcessing && (
-              <View style={styles.processingOverlay}>
-                <View style={styles.processingIndicator} />
-                <Text style={styles.processingText}>Processing...</Text>
-              </View>
-            )}
+            <Text style={styles.title}>Face ID Verification</Text>
           </View>
-        ) : (
-          <View style={styles.scannerContainer}>
-            <View style={styles.scannerFrame}>
-              <View style={styles.scannerCircle} />
-              <Ionicons
-                name="scan"
-                size={80}
-                color="rgba(147, 197, 253, 0.3)"
+          <Text style={styles.subtitle}>
+            Position your face within the frame for verification.
+          </Text>
+
+          {capturedPhoto ? (
+            <View style={styles.photoPreviewContainer}>
+              <Image
+                source={{ uri: capturedPhoto }}
+                style={styles.photoPreview}
               />
+              <View style={styles.photoOverlay}>
+                <TouchableOpacity
+                  style={styles.retakeButton}
+                  onPress={retakePhoto}
+                >
+                  <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.retakeText}>Retake</Text>
+                </TouchableOpacity>
+              </View>
+              {isProcessing && (
+                <View style={styles.processingOverlay}>
+                  <View style={styles.processingIndicator} />
+                  <Text style={styles.processingText}>Processing...</Text>
+                </View>
+              )}
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={styles.scannerContainer}>
+              <View style={styles.scannerFrame}>
+                <View style={styles.scannerCircle} />
+                <Ionicons
+                  name="scan"
+                  size={80}
+                  color="rgba(147, 197, 253, 0.3)"
+                />
+              </View>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.verifyButton,
+            capturedPhoto && styles.verifyButtonDisabled,
+          ]}
+          onPress={capturedPhoto ? handleVerifyFace : handleStartScan}
+          disabled={isProcessing || isVerifying}
+        >
+          <Text style={styles.verifyButtonText}>
+            {capturedPhoto ? "Verify Face" : "Start Face Scan"}
+          </Text>
+        </TouchableOpacity>
+
+        <FaceVerificationOverlay
+          visible={showVerificationOverlay}
+          isProcessing={isVerifying}
+          result={verificationResult}
+          onClose={handleOverlayClose}
+          onRetry={handleRetryVerification}
+        />
       </View>
-
-      <TouchableOpacity
-        style={[
-          styles.verifyButton,
-          capturedPhoto && styles.verifyButtonDisabled,
-        ]}
-        onPress={capturedPhoto ? handleVerifyFace : handleStartScan}
-        disabled={isProcessing || isVerifying}
-      >
-        <Text style={styles.verifyButtonText}>
-          {capturedPhoto ? "Verify Face" : "Start Face Scan"}
-        </Text>
-      </TouchableOpacity>
-
-      <FaceVerificationOverlay
-        visible={showVerificationOverlay}
-        isProcessing={isVerifying}
-        result={verificationResult}
-        onClose={handleOverlayClose}
-        onRetry={handleRetryVerification}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
   },
   verificationCard: {

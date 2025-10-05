@@ -1,185 +1,253 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import GradientContainer from '@/components/GradientContainer';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  SafeAreaView,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useDB } from "@/hooks/local-db";
+import { Task } from "@/types/task-types";
+import GradientContainer from "@/components/GradientContainer";
+import { format, parseISO } from "date-fns";
 
 export default function HomeScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { getAllTasks } = useDB();
+
+  const loadTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const fetchedTasks = await getAllTasks();
+      setTasks(fetchedTasks);
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [getAllTasks]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  // Reload tasks when returning to this screen
+  useEffect(() => {
+    const interval = setInterval(loadTasks, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [loadTasks]);
+
+  const renderTask = ({ item }: { item: Task }) => (
+    <TouchableOpacity style={styles.taskCard}>
+      <View style={styles.taskHeader}>
+        <Text style={styles.taskTitle}>{item.title}</Text>
+        <Ionicons
+          name={item.completed ? "checkmark-circle" : "ellipse-outline"}
+          size={24}
+          color={item.completed ? "#4CAF50" : "#8a8a8a"}
+        />
+      </View>
+      <Text style={styles.taskDescription} numberOfLines={2}>
+        {item.description}
+      </Text>
+      <View style={styles.taskFooter}>
+        <Text style={styles.taskDate}>
+          {item.datetime
+            ? `${format(parseISO(item.datetime), "MMM dd, yyyy")} • ${format(
+                parseISO(item.datetime),
+                "HH:mm"
+              )}`
+            : "No date"}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <GradientContainer>
-      <View style={[styles.content, { paddingBottom: tabBarHeight + insets.bottom + 8 }]}>
-        {/* Header with new logo design */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          {/* Header with gradient text */}
+          <View style={styles.header}>
             <LinearGradient
-              colors={['#8a2be2', '#da22ff', '#00cfff']}
+              colors={['#8a2be2', '#00cfff']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              end={{ x: 1, y: 0 }}
               style={styles.logoGradient}
             >
-              <View style={styles.logoInner}>
-                <Ionicons name="checkbox-outline" size={28} color="#fff" />
-              </View>
+              <Text style={styles.headerTitle}>Memoract</Text>
             </LinearGradient>
-            <View style={styles.logoTextContainer}>
-              <Text style={styles.logoText}>Memoract</Text>
-              <Text style={styles.logoSubtext}>Stay on Track</Text>
-            </View>
+            <Text style={styles.headerSubtitle}>
+              Your personal task reminder
+            </Text>
           </View>
-        </View>
 
-        {/* Center Content - Big Add Task Button */}
-        <View style={styles.centerContent}>
+          {/* Tasks List or Empty State */}
+          {loading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color="#8a2be2" />
+            </View>
+          ) : tasks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="list-outline"
+                size={80}
+                color="rgba(255, 255, 255, 0.3)"
+              />
+              <Text style={styles.emptyStateText}>No tasks yet</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Create your first task to get started
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={tasks}
+              renderItem={renderTask}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.tasksList}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+
+          {/* Add Task Button */}
           <TouchableOpacity
-            style={styles.bigAddButton}
-            onPress={() => router.push('/add-task')}
+            style={styles.addButton}
+            onPress={() => router.push("/add-task")}
             activeOpacity={0.8}
           >
             <LinearGradient
               colors={['#8a2be2', '#00cfff']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.bigAddButtonGradient}
+              end={{ x: 1, y: 0 }}
+              style={styles.addButtonGradient}
             >
-              <Ionicons name="add-circle-outline" size={64} color="#fff" />
-              <Text style={styles.bigAddButtonText}>Add Task</Text>
+              <Ionicons name="add-circle-outline" size={24} color="#fff" />
+              <Text style={styles.addButtonText}>Add New Task</Text>
             </LinearGradient>
           </TouchableOpacity>
-
-          <Text style={styles.hintText}>
-            Tap to create your first task
-          </Text>
         </View>
-
-        {/* Bottom Info */}
-        <View style={styles.bottomInfo}>
-          <View style={styles.infoCard}>
-            <Ionicons name="list-outline" size={24} color="#00cfff" />
-            <Text style={styles.infoText}>
-              View all your tasks in the Task List tab
-            </Text>
-          </View>
-        </View>
-      </View>
+      </SafeAreaView>
     </GradientContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
   content: {
     flex: 1,
-    width: '100%',
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    padding: 20,
+    justifyContent: "space-between",
   },
   header: {
     paddingTop: 20,
     paddingBottom: 20,
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
   logoGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#8a2be2',
+    alignSelf: "flex-start",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 8,
+    textShadowColor: "rgba(138, 43, 226, 0.5)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#aaa",
+    marginTop: 8,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 100,
+  },
+  emptyStateText: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.6)",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.4)",
+    textAlign: "center",
+  },
+  tasksList: {
+    paddingBottom: 20,
+  },
+  taskCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  taskTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
+    flex: 1,
+  },
+  taskDescription: {
+    fontSize: 14,
+    color: "#aaa",
+    marginBottom: 12,
+  },
+  taskFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  taskDate: {
+    fontSize: 12,
+    color: "#8a8a8a",
+  },
+  addButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#8a2be2",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    marginBottom: 20,
   },
-  logoInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  logoTextContainer: {
-    gap: 2,
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-  logoSubtext: {
-    fontSize: 13,
-    color: '#00cfff',
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bigAddButton: {
-    width: 220,
-    height: 220,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 12,
-    shadowColor: '#8a2be2',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-  },
-  bigAddButtonGradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  bigAddButtonText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  hintText: {
-    fontSize: 16,
-    color: '#aaa',
-    marginTop: 24,
-    textAlign: 'center',
-  },
-  bottomInfo: {
-    paddingBottom: 12,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(0, 207, 255, 0.1)',
+  addButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 207, 255, 0.3)',
+    gap: 10,
   },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#00cfff',
-    lineHeight: 20,
+  addButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
   },
 });

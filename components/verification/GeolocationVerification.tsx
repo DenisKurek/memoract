@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import GeolocationVerificationOverlay from "./GeolocationVerificationOverlay";
 
 interface GeolocationVerificationProps {
@@ -25,45 +26,58 @@ export default function GeolocationVerification({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="location-outline"
-            size={24}
-            color="#2DD4BF"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Check Location</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Your device will verify if you are at the correct location.
-        </Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.verificationCard}>
+          <View style={styles.header}>
+            <Ionicons
+              name="location-outline"
+              size={24}
+              color="#2DD4BF"
+              style={styles.icon}
+            />
+            <Text style={styles.title}>Check Location</Text>
+          </View>
+          <Text style={styles.subtitle}>
+            Your device will verify if you are at the correct location.
+          </Text>
 
-        {/* Location Area */}
-        <View style={styles.locationContainer}>
-          <Ionicons name="location" size={64} color="rgba(45, 212, 191, 0.3)" />
-          {/* Pulse rings */}
-          <View style={[styles.pulseRing, styles.ring1]} />
-          <View style={[styles.pulseRing, styles.ring2]} />
-          <View style={[styles.pulseRing, styles.ring3]} />
+          {/* Location Area */}
+          <View style={styles.locationContainer}>
+            <Ionicons
+              name="location"
+              size={64}
+              color="rgba(45, 212, 191, 0.3)"
+            />
+            {/* Pulse rings */}
+            <View style={[styles.pulseRing, styles.ring1]} />
+            <View style={[styles.pulseRing, styles.ring2]} />
+            <View style={[styles.pulseRing, styles.ring3]} />
+          </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.verifyButton}
+          onPress={handleVerifyClick}
+        >
+          <Text style={styles.verifyButtonText}>Verify Location</Text>
+        </TouchableOpacity>
+
+        <GeolocationVerificationOverlay
+          visible={showOverlay}
+          onComplete={handleVerificationComplete}
+        />
       </View>
-
-      <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyClick}>
-        <Text style={styles.verifyButtonText}>Verify Location</Text>
-      </TouchableOpacity>
-
-      <GeolocationVerificationOverlay
-        visible={showOverlay}
-        onComplete={handleVerificationComplete}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
   },
   verificationCard: {

@@ -14,10 +14,26 @@ export interface CompletionMethod {
 }
 
 export const completionMethods: CompletionMethod[] = [
-  { label: 'Scan QR Code', value: CompletionMethodType.QR_CODE, icon: 'qr-code-outline' },
-  { label: 'Use Geolocation', value: CompletionMethodType.GEOLOCATION, icon: 'location-outline' },
-  { label: 'Add Photo', value: CompletionMethodType.PHOTO, icon: 'camera-outline' },
-  { label: 'Face ID', value: CompletionMethodType.FACE_ID, icon: 'scan-outline' },
+  {
+    label: "Scan QR Code",
+    value: CompletionMethodType.QR_CODE,
+    icon: "qr-code-outline",
+  },
+  {
+    label: "Use Geolocation",
+    value: CompletionMethodType.GEOLOCATION,
+    icon: "location-outline",
+  },
+  {
+    label: "Add Photo",
+    value: CompletionMethodType.PHOTO,
+    icon: "camera-outline",
+  },
+  {
+    label: "Face ID",
+    value: CompletionMethodType.FACE_ID,
+    icon: "scan-outline",
+  },
 ];
 
 export interface LocationData {
@@ -30,10 +46,8 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  date: Date;
-  time: string;
+  datetime: string;
   completionMethod: CompletionMethodType;
-  createdAt: Date;
   completed: boolean;
   // Additional data based on completion method
   qrCode?: string; // For QR_CODE: generated QR code data
