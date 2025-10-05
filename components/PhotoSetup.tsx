@@ -19,6 +19,7 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('back');
   const insets = useSafeAreaInsets();
 
   const handleTakePhoto = async () => {
@@ -73,17 +74,28 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
     onClose();
   };
 
+  const toggleCameraFacing = () => {
+    setCameraFacing(current => current === 'back' ? 'front' : 'back');
+  };
+
   if (showCamera) {
     return (
       <Modal visible={visible} animationType="slide">
         <View style={styles.cameraContainer}>
-          <CameraView style={styles.camera} facing="back">
+          <CameraView style={styles.camera} facing={cameraFacing}>
             <View style={styles.cameraOverlay}>
               <TouchableOpacity
                 style={[styles.closeButton, { top: (insets?.top ?? 0) + 12 }]}
                 onPress={() => setShowCamera(false)}
               >
                 <Ionicons name="close-circle" size={40} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.flipCameraButton, { top: (insets?.top ?? 0) + 12, right: 20 }]}
+                onPress={toggleCameraFacing}
+              >
+                <Ionicons name="camera-reverse" size={40} color="#fff" />
               </TouchableOpacity>
 
               <View style={[styles.captureButtonContainer, { bottom: (insets?.bottom ?? 0) + 24 }]}>
@@ -288,6 +300,10 @@ const styles = StyleSheet.create({
   closeButton: {
     position: 'absolute',
     left: 20,
+  },
+  flipCameraButton: {
+    position: 'absolute',
+    right: 20,
   },
   captureButtonContainer: {
     position: 'absolute',
