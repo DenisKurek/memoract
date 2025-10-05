@@ -34,10 +34,10 @@ export default function PawelTest() {
       <TouchableOpacity
         onPress={async () => {
           await saveTask({
-            title: "geolokacja test",
-            description: "geolokacja test",
+            title: "Photo Verification Test",
+            description: "Take a photo to complete this task",
             datetime: new Date().toISOString(),
-            completionMethod: CompletionMethod.GEOLOCATION,
+            completionMethod: CompletionMethod.PHOTO,
           });
 
           const tasks = await getAllTasks();
@@ -45,7 +45,7 @@ export default function PawelTest() {
         }}
       >
         <Text style={{ fontSize: 18, color: "blue", textAlign: "center" }}>
-          Add GeolocationTask
+          Add Photo Verification Task
         </Text>
       </TouchableOpacity>
     </SafeAreaView>

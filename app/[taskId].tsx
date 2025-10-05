@@ -51,7 +51,7 @@ export default function CompleteTask() {
           <GeolocationVerification onVerify={handleVerify} taskId={taskId} />
         );
       case CompletionMethod.PHOTO:
-        return <PhotoVerification onVerify={handleVerify} />;
+        return <PhotoVerification onVerify={handleVerify} taskId={taskId} />;
     }
   };
 
