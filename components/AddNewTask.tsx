@@ -174,7 +174,7 @@ export default function AddNewTask() {
                 }),
             ]).start(() => {
                 setShowSuccessModal(false);
-                router.back();
+                router.push('/(tabs)/task-list');
             });
         } catch (error) {
             console.error('Error saving task:', error);

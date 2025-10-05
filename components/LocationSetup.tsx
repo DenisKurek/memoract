@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { LocationData } from '@/types/task-types';
+import { saveVerificationData } from '@/hooks/local-db';
 
 interface LocationSetupProps {
   visible: boolean;
@@ -91,10 +92,17 @@ export default function LocationSetup({ visible, onClose, onSave }: LocationSetu
     }
   };
 
-  const handleSaveLocation = () => {
+  const handleSaveLocation = async () => {
     if (selectedLocation) {
-      onSave(selectedLocation);
-      onClose();
+      try {
+        // Save location to secure storage
+        await saveVerificationData(`location_${Date.now()}`, selectedLocation);
+        onSave(selectedLocation);
+        onClose();
+      } catch (error) {
+        console.error('Error saving location:', error);
+        alert('Failed to save location');
+      }
     } else {
       alert('Please select a location');
     }

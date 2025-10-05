@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Share } from 'react-na
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as MediaLibrary from 'expo-media-library';
+import { saveVerificationData } from '@/hooks/local-db';
 
 interface QRCodeSetupProps {
   visible: boolean;
@@ -17,14 +17,9 @@ export default function QRCodeSetup({ visible, onClose, onSave, taskId }: QRCode
 
   const handleSaveQR = async () => {
     try {
-      // Request permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Permission to access media library is required!');
-        return;
-      }
-
-      // For now, just save the QR data string
+      // Save QR data to secure storage
+      await saveVerificationData(`qr_${taskId}`, qrData);
+      
       onSave(qrData);
       alert('QR Code saved! You can scan it later to verify this task.');
       onClose();

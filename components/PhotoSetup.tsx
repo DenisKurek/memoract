@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { saveVerificationData } from '@/hooks/local-db';
 
 interface PhotoSetupProps {
   visible: boolean;
@@ -48,10 +49,17 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
     }
   };
 
-  const handleSavePhoto = () => {
+  const handleSavePhoto = async () => {
     if (photoUri) {
-      onSave(photoUri);
-      onClose();
+      try {
+        // Save photo URI to secure storage
+        await saveVerificationData(`photo_${Date.now()}`, photoUri);
+        onSave(photoUri);
+        onClose();
+      } catch (error) {
+        console.error('Error saving photo:', error);
+        Alert.alert('Error', 'Failed to save photo');
+      }
     } else {
       Alert.alert('No Photo', 'Please take or select a photo first');
     }

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Task } from "@/types/task-types";
+import * as SecureStore from 'expo-secure-store';
 
 const TASKS_STORAGE_KEY = "@memoract_tasks";
 
@@ -135,6 +136,36 @@ export function useDB() {
     deleteTask,
     clearAllTasks,
   };
+}
+
+/**
+ * Zapisuje wrażliwe dane (np. zdjęcia, QR kody) do Secure Store
+ * @param key unikalny klucz
+ * @param data dowolne dane do zapisania
+ */
+export async function saveVerificationData(key: string, data: any): Promise<void> {
+  try {
+    const jsonValue = JSON.stringify(data);
+    await SecureStore.setItemAsync(key, jsonValue);
+  } catch (e) {
+    console.error('Error saving verification data:', e);
+    throw new Error('Failed to save verification data');
+  }
+}
+
+/**
+ * Pobiera wrażliwe dane (np. zdjęcia, QR kody) z Secure Store
+ * @param key unikalny klucz
+ * @returns dane lub null
+ */
+export async function getVerificationData(key: string): Promise<any | null> {
+  try {
+    const jsonValue = await SecureStore.getItemAsync(key);
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (e) {
+    console.error('Error getting verification data:', e);
+    return null;
+  }
 }
 
 function generateId(): string {

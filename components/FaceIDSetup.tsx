@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { saveVerificationData } from '@/hooks/local-db';
 
 interface FaceIDSetupProps {
   visible: boolean;
@@ -19,26 +20,34 @@ function FaceIDSetup({ visible, onClose, onSave }: FaceIDSetupProps) {
     }
   }, [visible, permission?.granted, requestPermission]);
 
-  const handleCaptureFace = () => {
-    // For now, simulate face capture with timestamp
-    const simulatedFaceData = JSON.stringify({
-      timestamp: Date.now(),
-      userId: 'user_' + Math.random().toString(36).substr(2, 9),
-    });
+  const handleCaptureFace = async () => {
+    try {
+      // For now, simulate face capture with timestamp
+      const simulatedFaceData = JSON.stringify({
+        timestamp: Date.now(),
+        userId: 'user_' + Math.random().toString(36).substr(2, 9),
+      });
 
-    Alert.alert(
-      'Face Captured',
-      "Your face has been registered. You'll need to scan your face again to verify this task.",
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            onSave(simulatedFaceData);
-            onClose();
+      // Save face data to secure storage
+      await saveVerificationData(`face_${Date.now()}`, simulatedFaceData);
+
+      Alert.alert(
+        'Face Captured',
+        "Your face has been registered. You'll need to scan your face again to verify this task.",
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              onSave(simulatedFaceData);
+              onClose();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error('Error saving face data:', error);
+      Alert.alert('Error', 'Failed to save face data');
+    }
   };
 
   if (!permission) {
