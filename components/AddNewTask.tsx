@@ -20,13 +20,17 @@ import QRCodeSetup from './QRCodeSetup';
 import LocationSetup from './LocationSetup';
 import PhotoSetup from './PhotoSetup';
 import FaceIDSetup from './FaceIDSetup';
+import GradientContainer from './GradientContainer';
+// add header height hook to respect transparent header safe area
+import { useHeaderHeight } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddNewTask() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date());
     const [time, setTime] = useState(new Date());
-    const [completionMethod, setCompletionMethod] = useState<CompletionMethodType | ''>('');
+    const [completionMethod, setCompletionMethod] = useState<CompletionMethodType | null>(null);
     const [showMethodPicker, setShowMethodPicker] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
@@ -49,11 +53,16 @@ export default function AddNewTask() {
     const scaleAnim = useState(new Animated.Value(0))[0];
     const taskIdRef = useState(`task_${Date.now()}`)[0];
 
+    // get header height to offset content (header is transparent)
+    const headerHeight = useHeaderHeight?.() ?? 0;
+    const insets = useSafeAreaInsets();
+    const headerOffset = Math.max(0, headerHeight - (insets?.top ?? 0));
+
     const formatDate = (date: Date) => {
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear();
-        return `${day}.${month}.${year}`;
+        return `${year}-${month}-${day}`;
     };
 
     const formatTime = (time: Date) => {
@@ -143,12 +152,22 @@ export default function AddNewTask() {
 
         setIsSaving(true);
         try {
+            console.log('Attempting to save task with data:', {
+                title: title.trim(),
+                description: description.trim(),
+                completionMethod,
+                qrCodeData,
+                locationData,
+                photoData,
+                faceIDData
+            });
+
             await saveTask({
                 title: title.trim(),
                 description: description.trim(),
                 date: date,
                 time: formatTime(time),
-                completionMethod: completionMethod as CompletionMethodType,
+                completionMethod: completionMethod,
                 createdAt: new Date(),
                 completed: false,
                 qrCode: qrCodeData,
@@ -156,6 +175,8 @@ export default function AddNewTask() {
                 photoUri: photoData,
                 faceData: faceIDData,
             });
+
+            console.log('Task saved successfully, showing success modal');
 
             // Show success animation
             setShowSuccessModal(true);
@@ -166,7 +187,7 @@ export default function AddNewTask() {
                     friction: 3,
                     useNativeDriver: true,
                 }),
-                Animated.delay(1000),
+                Animated.delay(500),
                 Animated.timing(scaleAnim, {
                     toValue: 0,
                     duration: 200,
@@ -174,6 +195,7 @@ export default function AddNewTask() {
                 }),
             ]).start(() => {
                 setShowSuccessModal(false);
+                console.log('Navigating to task list');
                 router.push('/(tabs)/task-list');
             });
         } catch (error) {
@@ -217,17 +239,50 @@ export default function AddNewTask() {
     const status = getCompletionMethodStatus();
 
     return (
-        <LinearGradient
-            colors={['#0f0c29', '#302b63', '#24243e']}
-            style={styles.container}
-        >
+        <GradientContainer>
             <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingTop: headerOffset + 12, paddingBottom: (insets?.bottom ?? 0) + 24 }]}
                 showsVerticalScrollIndicator={false}
+                style={styles.scrollView}
             >
                 <View style={styles.card}>
-                    <Text style={styles.title}>Add New Task</Text>
-                    <Text style={styles.subtitle}>Create something to remember</Text>
+                    <Text style={styles.title}>{title || 'New Task'}</Text>
+                    <Text style={styles.subtitle}>{description || 'Add description'}</Text>
+
+                    {/* Date and Time Pills */}
+                    <View style={styles.metaRow}>
+                        <TouchableOpacity
+                            style={styles.metaPill}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <Ionicons name="calendar-outline" size={20} color="#5AEADC" />
+                            <Text style={styles.metaText}>{formatDate(date)}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.metaPill}
+                            onPress={() => setShowTimePicker(true)}
+                        >
+                            <Ionicons name="time-outline" size={20} color="#93C5FD" />
+                            <Text style={styles.metaText}>{formatTime(time)}</Text>
+                        </TouchableOpacity>
+
+                        {completionMethod && (
+                            <TouchableOpacity
+                                style={styles.metaPill}
+                                onPress={() => setShowMethodPicker(true)}
+                            >
+                                <Ionicons
+                                    name={completionMethods.find(m => m.value === completionMethod)?.icon as any}
+                                    size={20}
+                                    color="#E9D5FF"
+                                />
+                                <Text style={styles.metaText}>
+                                    {completionMethods.find(m => m.value === completionMethod)?.label.split(' ')[0]}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
                     {/* Task Title */}
                     <Text style={styles.label}>Task Title</Text>
@@ -251,34 +306,6 @@ export default function AddNewTask() {
                         numberOfLines={4}
                         textAlignVertical="top"
                     />
-
-                    {/* Date and Time Row */}
-                    <View style={styles.row}>
-                        <View style={styles.halfWidth}>
-                            <View style={styles.iconLabelRow}>
-                                <Ionicons name="calendar-outline" size={18} color="#8a8a8a"/>
-                                <Text style={styles.label}>Date</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.input}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <Text style={styles.inputText}>{formatDate(date)}</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.halfWidth}>
-                            <View style={styles.iconLabelRow}>
-                                <Ionicons name="time-outline" size={18} color="#8a8a8a"/>
-                                <Text style={styles.label}>Time</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.input}
-                                onPress={() => setShowTimePicker(true)}
-                            >
-                                <Text style={styles.inputText}>{formatTime(time)}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
 
                     {/* Date Picker */}
                     {showDatePicker && (
@@ -451,45 +478,64 @@ export default function AddNewTask() {
                     </Animated.View>
                 </View>
             </Modal>
-        </LinearGradient>
+        </GradientContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    scrollView: {
         flex: 1,
+        width: '100%',
     },
     scrollContent: {
         flexGrow: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
         paddingTop: 60,
+        paddingBottom: 40,
     },
     card: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: 16,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.4,
-        shadowRadius: 20,
+        backgroundColor: 'rgba(30, 30, 47, 0.8)',
+        borderRadius: 20,
+        padding: 24,
+        marginHorizontal: 'auto',
         elevation: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(138, 43, 226, 0.3)',
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#fff',
-        marginBottom: 8,
-        textAlign: 'center',
+        marginBottom: 4,
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#aaa',
+        marginBottom: 20,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
         marginBottom: 24,
-        textAlign: 'center',
+    },
+    metaPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(138, 43, 226, 0.3)',
+    },
+    metaText: {
+        fontSize: 15,
+        color: '#fff',
+        fontWeight: '500',
     },
     label: {
         fontSize: 14,
@@ -499,60 +545,42 @@ const styles = StyleSheet.create({
     },
     input: {
         width: '100%',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 12,
+        padding: 14,
+        fontSize: 16,
         color: '#fff',
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: 'transparent',
-        justifyContent: 'center',
-    },
-    inputText: {
-        color: '#fff',
-        fontSize: 14,
+        borderColor: 'rgba(138, 43, 226, 0.2)',
     },
     textarea: {
         height: 100,
-        paddingTop: 12,
-    },
-    row: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 16,
-    },
-    halfWidth: {
-        flex: 1,
-    },
-    iconLabelRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: 8,
-        marginLeft: 4,
+        paddingTop: 14,
     },
     selectButton: {
         width: '100%',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 8,
-        padding: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 12,
+        padding: 14,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: 'rgba(138, 43, 226, 0.2)',
     },
     selectButtonText: {
-        fontSize: 14,
+        fontSize: 16,
         color: 'rgba(255, 255, 255, 0.6)',
     },
     optionsContainer: {
-        backgroundColor: '#1e1e2f',
-        borderRadius: 8,
+        backgroundColor: 'rgba(30, 30, 47, 0.6)',
+        borderRadius: 12,
         overflow: 'hidden',
         marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(138, 43, 226, 0.2)',
     },
     option: {
         flexDirection: 'row',
@@ -566,7 +594,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 207, 255, 0.1)',
     },
     optionText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#fff',
     },
     optionTextSelected: {
@@ -577,10 +605,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
         marginTop: 8,
-        shadowColor: '#8a2be2',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
         elevation: 8,
     },
     saveButtonDisabled: {
@@ -615,10 +639,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#4CAF50',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#4CAF50',
-        shadowOffset: {width: 0, height: 0},
-        shadowOpacity: 0.8,
-        shadowRadius: 20,
         elevation: 10,
     },
     successText: {

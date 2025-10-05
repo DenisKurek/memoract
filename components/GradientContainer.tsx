@@ -1,21 +1,30 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GradientContainer({ children, }: { children: React.ReactNode }) {
     return (
-        <LinearGradient
-              colors={['#0f0c29', '#302b63', '#24243e']}
-              style={styles.container}
+        <View style={styles.wrapper}>
+            <LinearGradient
+                colors={['#0f0c29', '#302b63', '#24243e']}
+                style={styles.gradient}
             >
-            {children}
-        </LinearGradient>
+                <SafeAreaView style={styles.safeArea} edges={['top']}>
+                    {children}
+                </SafeAreaView>
+            </LinearGradient>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    wrapper: {
         flex: 1,
-        alignItems: 'center',
-        paddingTop: 40,
-        paddingHorizontal: 12,
-    },});
+    },
+    gradient: {
+        flex: 1,
+    },
+    safeArea: {
+        flex: 1,
+    },
+});

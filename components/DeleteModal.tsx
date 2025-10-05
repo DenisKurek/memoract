@@ -1,5 +1,5 @@
 import { View, Text, Modal, Pressable, StyleSheet } from 'react-native';
-import { Task } from './types';
+import { Task } from '@/types/task-types';
 
 type DeleteModalProps = {
     modalVisible: boolean,
@@ -50,9 +50,6 @@ const styles = StyleSheet.create({
           padding: 24,
           width: '80%',
           alignItems: 'center',
-          shadowColor: '#000',
-          shadowOpacity: 0.2,
-          shadowRadius: 10,
           elevation: 8,
         },
         modalTitle: {

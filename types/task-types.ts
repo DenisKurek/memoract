@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 
 export enum CompletionMethodType {
-  QR_CODE = 'qr',
-  GEOLOCATION = 'geo',
-  PHOTO = 'photo',
-  FACE_ID = 'face',
+  QR_CODE = 'QR Code',
+  GEOLOCATION = 'Geolocation',
+  PHOTO = 'Photo',
+  FACE_ID = 'FACE ID',
 }
 
 export interface CompletionMethod {

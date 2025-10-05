@@ -1,37 +1,42 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet} from 'react-native';
+import { Text, FlatList, StyleSheet, View} from 'react-native';
 import DeleteModal from '../../components/DeleteModal';
 import TaskCard from '../../components/TaskCard';
 import { Task } from '@/types/task-types';
 import { useDB } from '@/hooks/local-db';
-import { LinearGradient } from 'expo-linear-gradient';
 import GradientContainer from '@/components/GradientContainer';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TaskListTab() {
     const [tasks, setTasks] = React.useState<Task[]>([]);
     const [modalVisible, setModalVisible] = React.useState<boolean>(false);
     const [taskToDelete, setTaskToDelete] = React.useState<Task | null>(null);
-    const db = useDB();
+    const { getAllTasks, deleteTask } = useDB();
+    const tabBarHeight = useBottomTabBarHeight();
+    const insets = useSafeAreaInsets();
+
+    const fetchTasks = React.useCallback(async () => {
+         const fetchedTasks = await getAllTasks();
+         console.log('Fetched tasks:', fetchedTasks);
+         setTasks(fetchedTasks);
+    }, [getAllTasks]);
 
     React.useEffect(() => {
-      const fetchTasks = async () => {
-         const tasks = await db.getAllTasks();
-         console.log('Fetched tasks:', tasks);
-            setTasks(tasks);
-        }
         fetchTasks();
-    }, []);
-            
+    }, [fetchTasks]);
+
 
     const handleDeleteTask = (task: Task) => {
         setTaskToDelete(task);
         setModalVisible(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!taskToDelete) return;
-        db.deleteTask(taskToDelete.id);
-        setTasks((prev:Task[]) => prev.filter((task) => task.id !== taskToDelete?.id));
+        await deleteTask(taskToDelete.id);
+        const updatedTasks = await getAllTasks();
+        setTasks(updatedTasks);
         setModalVisible(false);
         setTaskToDelete(null);
     };
@@ -43,19 +48,21 @@ export default function TaskListTab() {
 
     return (
         <GradientContainer>
-            <Text style={styles.headerTitle}>Task List</Text>
-            <Text style={styles.headerSubtitle}>{tasks.length} tasks to remember</Text>
-            <FlatList
-                data={tasks}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <TaskCard task={item} onDelete={handleDeleteTask} />
-                )}
-                contentContainerStyle={{ paddingBottom: 32 }}
-                showsVerticalScrollIndicator={false}
-            />
-            <DeleteModal modalVisible={modalVisible} taskToDelete={taskToDelete}
-                confirmDelete={confirmDelete} cancelDelete={cancelDelete} />
+            <View style={styles.container}>
+                <Text style={styles.headerTitle}>Task List</Text>
+                <Text style={styles.headerSubtitle}>{tasks.length} tasks to remember</Text>
+                <FlatList
+                    data={tasks}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <TaskCard task={item} onDelete={handleDeleteTask} />
+                    )}
+                    contentContainerStyle={[styles.flatListContent, { paddingBottom: tabBarHeight + insets.bottom + 16 }]}
+                    showsVerticalScrollIndicator={false}
+                />
+                <DeleteModal modalVisible={modalVisible} taskToDelete={taskToDelete}
+                    confirmDelete={confirmDelete} cancelDelete={cancelDelete} />
+            </View>
         </GradientContainer>
     );
 }
@@ -63,21 +70,21 @@ export default function TaskListTab() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        alignItems: 'center',
-        paddingTop: 40,
-        paddingHorizontal: 12,
+        paddingHorizontal: 20,
     },
     headerTitle: {
         fontSize: 32,
         fontWeight: 'bold',
         color: '#b6bfff',
         marginBottom: 2,
-        alignSelf: 'flex-start',
+        marginTop: 10,
     },
     headerSubtitle: {
         fontSize: 16,
         color: '#7bb7e6',
         marginBottom: 18,
-        alignSelf: 'flex-start',
+    },
+    flatListContent: {
+        paddingBottom: 32,
     },
 });

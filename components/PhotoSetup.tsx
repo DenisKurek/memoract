@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { saveVerificationData } from '@/hooks/local-db';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PhotoSetupProps {
   visible: boolean;
@@ -16,6 +17,7 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const insets = useSafeAreaInsets();
 
   const handleTakePhoto = async () => {
     if (!permission?.granted) {
@@ -76,13 +78,13 @@ function PhotoSetup({ visible, onClose, onSave }: PhotoSetupProps) {
           <CameraView style={styles.camera} facing="back">
             <View style={styles.cameraOverlay}>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={[styles.closeButton, { top: (insets?.top ?? 0) + 12 }]}
                 onPress={() => setShowCamera(false)}
               >
                 <Ionicons name="close-circle" size={40} color="#fff" />
               </TouchableOpacity>
 
-              <View style={styles.captureButtonContainer}>
+              <View style={[styles.captureButtonContainer, { bottom: (insets?.bottom ?? 0) + 24 }]}>
                 <TouchableOpacity
                   style={styles.captureButton}
                   onPress={() => {
@@ -281,12 +283,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
     left: 20,
   },
   captureButtonContainer: {
     position: 'absolute',
-    bottom: 40,
     alignSelf: 'center',
   },
   captureButton: {

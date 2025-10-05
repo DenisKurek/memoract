@@ -4,13 +4,71 @@ import { Task } from "@/types/task-types";
 import * as SecureStore from 'expo-secure-store';
 
 const TASKS_STORAGE_KEY = "@memoract_tasks";
+const SECURE_STORAGE_PREFIX = "@memoract_secure_";
+
+/**
+ * Zapisuje wrażliwe dane (np. zdjęcia, QR kody) do Secure Store
+ * Z fallbackiem do AsyncStorage dla Expo Go
+ * @param key unikalny klucz
+ * @param data dowolne dane do zapisania
+ */
+export async function saveVerificationData(key: string, data: any): Promise<void> {
+  try {
+    const jsonValue = JSON.stringify(data);
+    const storageKey = `${SECURE_STORAGE_PREFIX}${key}`;
+
+    try {
+      // Próbuj użyć SecureStore (może nie działać w Expo Go)
+      await SecureStore.setItemAsync(storageKey, jsonValue);
+    } catch (secureError) {
+      console.warn('SecureStore not available, using AsyncStorage fallback:', secureError);
+      // Fallback do AsyncStorage
+      await AsyncStorage.setItem(storageKey, jsonValue);
+    }
+  } catch (e) {
+    console.error('Error saving verification data:', e);
+    throw new Error('Failed to save verification data');
+  }
+}
+
+/**
+ * Pobiera wrażliwe dane (np. zdjęcia, QR kody) z Secure Store
+ * Z fallbackiem do AsyncStorage dla Expo Go
+ * @param key unikalny klucz
+ * @returns dane lub null
+ */
+export async function getVerificationData(key: string): Promise<any | null> {
+  try {
+    const storageKey = `${SECURE_STORAGE_PREFIX}${key}`;
+    let jsonValue: string | null = null;
+
+    try {
+      // Próbuj użyć SecureStore
+      jsonValue = await SecureStore.getItemAsync(storageKey);
+    } catch (secureError) {
+      console.warn('SecureStore not available, using AsyncStorage fallback:', secureError);
+      // Fallback do AsyncStorage
+      jsonValue = await AsyncStorage.getItem(storageKey);
+    }
+
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (e) {
+    console.error('Error getting verification data:', e);
+    return null;
+  }
+}
 
 export function useDB() {
   const saveTask = useCallback(
     async (task: Omit<Task, "id">): Promise<Task> => {
       try {
+        console.log('=== SAVING TASK ===');
+        console.log('Task data:', JSON.stringify(task, null, 2));
+
         const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
         const tasks = tasksJSON ? JSON.parse(tasksJSON) : [];
+
+        console.log('Existing tasks count:', tasks.length);
 
         const newTask: Task = {
           ...task,
@@ -18,11 +76,22 @@ export function useDB() {
         };
 
         tasks.push(newTask);
-        await AsyncStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+
+        const tasksToSave = JSON.stringify(tasks);
+        console.log('Saving tasks array, new count:', tasks.length);
+
+        await AsyncStorage.setItem(TASKS_STORAGE_KEY, tasksToSave);
+
+        // Verify save
+        const verifyJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+        const verifyTasks = verifyJSON ? JSON.parse(verifyJSON) : [];
+        console.log('Verification: tasks in storage:', verifyTasks.length);
+        console.log('Task saved successfully with ID:', newTask.id);
 
         return newTask;
       } catch (error) {
-        console.error("Error saving task:", error);
+        console.error("=== ERROR SAVING TASK ===");
+        console.error("Error details:", error);
         throw new Error("Failed to save task");
       }
     },
@@ -136,36 +205,6 @@ export function useDB() {
     deleteTask,
     clearAllTasks,
   };
-}
-
-/**
- * Zapisuje wrażliwe dane (np. zdjęcia, QR kody) do Secure Store
- * @param key unikalny klucz
- * @param data dowolne dane do zapisania
- */
-export async function saveVerificationData(key: string, data: any): Promise<void> {
-  try {
-    const jsonValue = JSON.stringify(data);
-    await SecureStore.setItemAsync(key, jsonValue);
-  } catch (e) {
-    console.error('Error saving verification data:', e);
-    throw new Error('Failed to save verification data');
-  }
-}
-
-/**
- * Pobiera wrażliwe dane (np. zdjęcia, QR kody) z Secure Store
- * @param key unikalny klucz
- * @returns dane lub null
- */
-export async function getVerificationData(key: string): Promise<any | null> {
-  try {
-    const jsonValue = await SecureStore.getItemAsync(key);
-    return jsonValue != null ? JSON.parse(jsonValue) : null;
-  } catch (e) {
-    console.error('Error getting verification data:', e);
-    return null;
-  }
 }
 
 function generateId(): string {
