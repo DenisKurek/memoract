@@ -3,10 +3,7 @@ import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
-  withSequence,
   withTiming,
-  withDelay,
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,35 +15,14 @@ interface SuccessCheckmarkProps {
 
 export default function SuccessCheckmark({ visible, onComplete }: SuccessCheckmarkProps) {
   const opacity = useSharedValue(0);
-  const checkmarkScale = useSharedValue(0);
-  const circleScale = useSharedValue(0);
-  const rotation = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      // Fade in background
-      opacity.value = withTiming(1, { duration: 200 });
-
-      // Circle appears with spring
-      circleScale.value = withSpring(1, {
-        damping: 12,
-        stiffness: 150,
+      // Simple fade in
+      opacity.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.ease),
       });
-
-      // Checkmark draws in with delay
-      checkmarkScale.value = withDelay(
-        150,
-        withSpring(1, {
-          damping: 10,
-          stiffness: 200,
-        })
-      );
-
-      // Subtle rotation for effect
-      rotation.value = withSequence(
-        withTiming(-5, { duration: 100 }),
-        withTiming(0, { duration: 100 })
-      );
 
       // Auto-hide after 1.5 seconds
       const timer = setTimeout(() => {
@@ -62,11 +38,8 @@ export default function SuccessCheckmark({ visible, onComplete }: SuccessCheckma
       return () => clearTimeout(timer);
     } else {
       opacity.value = 0;
-      checkmarkScale.value = 0;
-      circleScale.value = 0;
-      rotation.value = 0;
     }
-  }, [visible, opacity, checkmarkScale, circleScale, rotation, onComplete]);
+  }, [visible, opacity, onComplete]);
 
   const containerStyle = useAnimatedStyle(() => {
     return {
@@ -74,29 +47,12 @@ export default function SuccessCheckmark({ visible, onComplete }: SuccessCheckma
     };
   });
 
-  const circleStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: circleScale.value },
-        { rotate: `${rotation.value}deg` },
-      ],
-    };
-  });
-
-  const checkmarkStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: checkmarkScale.value }],
-    };
-  });
-
   if (!visible) return null;
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>
-      <Animated.View style={[styles.circle, circleStyle]}>
-        <Animated.View style={checkmarkStyle}>
-          <Ionicons name="checkmark" size={50} color="#fff" />
-        </Animated.View>
+      <Animated.View style={styles.circle}>
+        <Ionicons name="checkmark" size={50} color="#fff" />
       </Animated.View>
     </Animated.View>
   );
