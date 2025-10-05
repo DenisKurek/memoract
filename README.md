@@ -1,5 +1,10 @@
 # Welcome to your Memoract 👋
 
+## Requirements
+- Node.js, npm/yarn
+- Expo CLI
+- Android/iOS emulator or device
+
 ## Get started
 
 1. Install dependencies

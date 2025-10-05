@@ -1,7 +1,7 @@
-# NutCracker App – Technical Documentation
+# Memoract App – Technical Documentation
 
 ## Overview
-NutCracker is a React Native mobile application built with Expo, designed for task management with advanced completion methods and notification features. The app leverages modern React patterns, Expo modules, and a modular architecture for scalability and maintainability.
+Memoract is a React Native mobile application built with Expo, designed for task management with advanced completion methods and notification features. The app leverages modern React patterns, Expo modules, and a modular architecture for scalability and maintainability.
 
 ---
 
@@ -12,12 +12,6 @@ NutCracker is a React Native mobile application built with Expo, designed for ta
 - **TypeScript**: Provides static typing for safer and more maintainable code.
 - **Expo Router**: File-based routing for navigation, supporting tabs, modals, and deep linking.
 - **React Navigation**: Underlying navigation engine for stack, tab, and modal navigation.
-- **expo-notifications**: Handles local and push notifications, including scheduling and response handling.
-- **expo-linear-gradient**: Enables gradient backgrounds for visually rich UI components.
-- **@expo/vector-icons**: Provides a large set of customizable icons.
-- **@react-native-community/datetimepicker**: Native date and time picker components.
-- **react-native-safe-area-context**: Handles device safe area insets for proper UI layout.
-
 ---
 
 ## Main Plugins & Libraries
@@ -34,14 +28,13 @@ NutCracker is a React Native mobile application built with Expo, designed for ta
 
 ### 1. Task Management
 - **Add New Task**: Users can create tasks with a title, description, date, time, and a required completion method.
-- **Completion Methods**: Tasks can require QR code scan, geolocation, photo, or Face ID for completion. Each method has a dedicated setup flow.
+- **Completion Methods**: Tasks can require: QR code scan, geolocation, photo, or Face ID for completion. Each method has a dedicated setup flow.
 - **Task List**: Displays all tasks in a visually rich list, with gradient backgrounds and meta info.
 - **Task Deletion**: Users can delete tasks with a confirmation modal.
 
 ### 2. Notifications
-- **Scheduled Reminders**: When a task is created, a local notification is scheduled to remind the user at the specified time.
+- **Scheduled Reminders**: When a task is created, a notification is scheduled to remind the user at the specified time.
 - **Deep Linking on Notification Tap**: Tapping a notification navigates directly to the relevant task detail screen using the task ID.
-- **In-App Notification Handling**: Custom hook (`useNotificationHandler`) listens for notification responses and performs navigation.
 
 ### 3. Navigation
 - **Tab Navigation**: The app uses a tab-based layout for main sections (e.g., Home, Task List).
@@ -54,7 +47,7 @@ NutCracker is a React Native mobile application built with Expo, designed for ta
 - **Responsive Layout**: Uses flexbox and safe area insets for consistent appearance across devices.
 
 ### 5. Local Data Storage
-- **Custom Hook (`useDB`)**: Handles saving and retrieving tasks locally (implementation not shown here).
+- **Custom Hook (`useDB`)**: Handles saving and retrieving tasks locally.
 
 ---
 
@@ -85,11 +78,6 @@ NutCracker is a React Native mobile application built with Expo, designed for ta
 - Node.js, npm/yarn
 - Expo CLI
 - Android/iOS emulator or device
-
----
-
-## Authors
-- Denis Kurek (repo owner)
 
 ---
 
