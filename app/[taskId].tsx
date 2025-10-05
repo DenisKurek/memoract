@@ -5,18 +5,20 @@ import {
   QrCodeVerification,
 } from "@/components/verification";
 import { useDB } from "@/hooks/local-db";
-import { CompletionMethod, Task } from "@/types/task-types";
+import { CompletionMethodType, Task } from "@/types/task-types";
 import { Ionicons } from "@expo/vector-icons";
 import { format, parseISO } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import GradientContainer from "@/components/GradientContainer";
 
 export default function CompleteTask() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const router = useRouter();
   const { getTaskById, deleteTask } = useDB();
   const [task, setTask] = useState<Task | null>(null);
+  console.log(task);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -42,67 +44,103 @@ export default function CompleteTask() {
     if (!task) return null;
 
     switch (task.completionMethod) {
-      case CompletionMethod.FACE_ID:
-        return <FaceIdVerification onVerify={handleVerify} />;
-      case CompletionMethod.QR_CODE:
-        return <QrCodeVerification onVerify={handleVerify} taskId={taskId} />;
-      case CompletionMethod.GEOLOCATION:
+      case CompletionMethodType.FACE_ID:
         return (
-          <GeolocationVerification onVerify={handleVerify} taskId={taskId} />
+          <FaceIdVerification
+            onVerify={handleVerify}
+            datetime={task.datetime}
+          />
         );
-      case CompletionMethod.PHOTO:
-        return <PhotoVerification onVerify={handleVerify} taskId={taskId} />;
+      case CompletionMethodType.QR_CODE:
+        return (
+          <QrCodeVerification
+            onVerify={handleVerify}
+            taskId={taskId}
+            datetime={task.datetime}
+          />
+        );
+      case CompletionMethodType.GEOLOCATION:
+        return (
+          <GeolocationVerification
+            onVerify={handleVerify}
+            taskId={taskId}
+            datetime={task.datetime}
+          />
+        );
+      case CompletionMethodType.PHOTO:
+        return (
+          <PhotoVerification
+            onVerify={handleVerify}
+            taskId={taskId}
+            datetime={task.datetime}
+          />
+        );
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.title}>{task?.title}</Text>
-          <Text style={styles.subtitle}>Complete this task</Text>
-        </View>
-      </View>
-
-      <View style={styles.taskCard}>
-        <Text style={styles.taskDescription}>{task?.description}</Text>
-        <View style={styles.dateTimeContainer}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateText}>
-              {task?.datetime
-                ? format(parseISO(task.datetime), "yyyy-MM-dd")
-                : ""}
-            </Text>
-          </View>
-          <View style={styles.timeBox}>
-            <Text style={styles.timeText}>
-              {task?.datetime ? format(parseISO(task.datetime), "HH:mm") : ""}
-            </Text>
+    <GradientContainer>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.title}>{task?.title}</Text>
+            <Text style={styles.subtitle}>Complete this task</Text>
           </View>
         </View>
-      </View>
 
-      {/* Dynamic Verification Component */}
-      {renderVerificationComponent()}
-    </View>
+        <View style={styles.taskCard}>
+          <Text style={styles.taskDescription}>{task?.description}</Text>
+          <View style={styles.dateTimeContainer}>
+            <View style={styles.dateBox}>
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="#5EEAD4"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.dateText}>
+                {task?.datetime
+                  ? format(parseISO(task.datetime), "MMM dd, yyyy")
+                  : "No date"}
+              </Text>
+            </View>
+            <View style={styles.timeBox}>
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color="#93C5FD"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.timeText}>
+                {task?.datetime
+                  ? format(parseISO(task.datetime), "HH:mm")
+                  : "No time"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Dynamic Verification Component */}
+        {renderVerificationComponent()}
+      </View>
+    </GradientContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  content: {
     flex: 1,
-    // bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950
-    backgroundColor: "#0f0f23", // Dark gradient base approximation
-    padding: 24,
+    width: "100%",
+    paddingHorizontal: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 32,
+    marginTop: 0,
+    marginBottom: 24,
     gap: 16,
   },
   backButton: {
@@ -151,6 +189,8 @@ const styles = StyleSheet.create({
   },
   dateBox: {
     // px-3 py-1.5 rounded-lg bg-teal-500/10 border border-teal-400/20 text-xs text-teal-200
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(20, 184, 166, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -165,6 +205,8 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     // px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-400/20 text-xs text-blue-200
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,

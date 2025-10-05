@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import {
   Alert,
   Image,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,15 +15,18 @@ import {
   verifyPhotoWithLLM,
 } from "../../services/photoVerification";
 import PhotoVerificationOverlay from "./PhotoVerificationOverlay";
+import { format, parseISO } from "date-fns";
 
 interface PhotoVerificationProps {
   onVerify: () => void;
   taskId?: string;
+  datetime: string;
 }
 
 export default function PhotoVerification({
   onVerify,
   taskId,
+  datetime,
 }: PhotoVerificationProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [showCamera, setShowCamera] = useState(false);
@@ -31,6 +35,27 @@ export default function PhotoVerification({
   const [verificationResult, setVerificationResult] =
     useState<PhotoVerificationResult | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  // Safely format the datetime
+  const formatDate = () => {
+    try {
+      if (!datetime) return "No date";
+      return format(parseISO(datetime), "yyyy-MM-dd");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  const formatTime = () => {
+    try {
+      if (!datetime) return "No time";
+      return format(parseISO(datetime), "HH:mm");
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Invalid time";
+    }
+  };
 
   const handleStartCamera = async () => {
     if (!permission) {
@@ -128,7 +153,104 @@ export default function PhotoVerification({
   // Show captured photo preview
   if (capturedPhoto) {
     return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          {/* Date/Time Display */}
+          <View style={styles.dateTimeSection}>
+            <View style={styles.dateBox}>
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="#5EEAD4"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.dateText}>{formatDate()}</Text>
+            </View>
+            <View style={styles.timeBox}>
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color="#93C5FD"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.timeText}>{formatTime()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.verificationCard}>
+            <View style={styles.header}>
+              <Ionicons
+                name="camera-outline"
+                size={24}
+                color="#C4B5FD"
+                style={styles.icon}
+              />
+              <Text style={styles.title}>Photo Preview</Text>
+            </View>
+            <Text style={styles.subtitle}>
+              Review your photo and verify it with AI
+            </Text>
+
+            <Image
+              source={{ uri: capturedPhoto }}
+              style={styles.photoPreview}
+            />
+
+            <View style={styles.previewButtons}>
+              <TouchableOpacity
+                style={styles.retakeButton}
+                onPress={retakePhoto}
+              >
+                <Ionicons name="refresh" size={20} color="#C4B5FD" />
+                <Text style={styles.retakeButtonText}>Retake</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.verifyPhotoButton}
+                onPress={handleVerifyPhoto}
+              >
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Text style={styles.verifyPhotoButtonText}>Verify with AI</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <PhotoVerificationOverlay
+            visible={showVerificationOverlay}
+            result={verificationResult}
+            onComplete={handleVerificationComplete}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Initial state - show camera button
+  return (
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Date/Time Display */}
+        <View style={styles.dateTimeSection}>
+          <View style={styles.dateBox}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color="#5EEAD4"
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.dateText}>{formatDate()}</Text>
+          </View>
+          <View style={styles.timeBox}>
+            <Ionicons
+              name="time-outline"
+              size={14}
+              color="#93C5FD"
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.timeText}>{formatTime()}</Text>
+          </View>
+        </View>
+
         <View style={styles.verificationCard}>
           <View style={styles.header}>
             <Ionicons
@@ -137,83 +259,83 @@ export default function PhotoVerification({
               color="#C4B5FD"
               style={styles.icon}
             />
-            <Text style={styles.title}>Photo Preview</Text>
+            <Text style={styles.title}>Take Photo</Text>
           </View>
           <Text style={styles.subtitle}>
-            Review your photo and verify it with AI
+            Take a photo of the reference image. AI will compare and verify if
+            it matches.
           </Text>
 
-          <Image source={{ uri: capturedPhoto }} style={styles.photoPreview} />
-
-          <View style={styles.previewButtons}>
-            <TouchableOpacity style={styles.retakeButton} onPress={retakePhoto}>
-              <Ionicons name="refresh" size={20} color="#C4B5FD" />
-              <Text style={styles.retakeButtonText}>Retake</Text>
-            </TouchableOpacity>
-
+          {/* Camera Area */}
+          <View style={styles.cameraContainer}>
             <TouchableOpacity
-              style={styles.verifyPhotoButton}
-              onPress={handleVerifyPhoto}
+              style={styles.cameraButton}
+              onPress={handleStartCamera}
             >
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.verifyPhotoButtonText}>Verify with AI</Text>
+              <Ionicons
+                name="camera"
+                size={48}
+                color="rgba(196, 181, 253, 0.5)"
+              />
+              <Text style={styles.cameraText}>Tap to capture photo</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <PhotoVerificationOverlay
-          visible={showVerificationOverlay}
-          result={verificationResult}
-          onComplete={handleVerificationComplete}
-        />
+        <TouchableOpacity
+          style={styles.verifyButton}
+          onPress={handleStartCamera}
+        >
+          <Text style={styles.verifyButtonText}>Take Photo</Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
-
-  // Initial state - show camera button
-  return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="camera-outline"
-            size={24}
-            color="#C4B5FD"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Take Photo</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Take a photo of the reference image. AI will compare and verify if it
-          matches.
-        </Text>
-
-        {/* Camera Area */}
-        <View style={styles.cameraContainer}>
-          <TouchableOpacity
-            style={styles.cameraButton}
-            onPress={handleStartCamera}
-          >
-            <Ionicons
-              name="camera"
-              size={48}
-              color="rgba(196, 181, 253, 0.5)"
-            />
-            <Text style={styles.cameraText}>Tap to capture photo</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.verifyButton} onPress={handleStartCamera}>
-        <Text style={styles.verifyButtonText}>Take Photo</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
+  },
+  dateTimeSection: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  dateBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(45, 212, 191, 0.3)",
+  },
+  dateText: {
+    color: "#5EEAD4", // teal-200
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  timeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(96, 165, 250, 0.3)",
+  },
+  timeText: {
+    color: "#93C5FD", // blue-200
+    fontSize: 13,
+    fontWeight: "600",
   },
   verificationCard: {
     // p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-teal-500/10 backdrop-blur-sm border border-purple-400/20

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import {
   Alert,
   Image,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,13 +15,16 @@ import {
   verifyFaceWithLLM,
 } from "../../services/faceVerification";
 import FaceVerificationOverlay from "./FaceVerificationOverlay";
+import { format, parseISO } from "date-fns";
 
 interface FaceIdVerificationProps {
   onVerify: () => void;
+  datetime: string;
 }
 
 export default function FaceIdVerification({
   onVerify,
+  datetime,
 }: FaceIdVerificationProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [showCamera, setShowCamera] = useState(false);
@@ -31,6 +35,27 @@ export default function FaceIdVerification({
     useState<FaceVerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  // Safely format the datetime
+  const formatDate = () => {
+    try {
+      if (!datetime) return "No date";
+      return format(parseISO(datetime), "yyyy-MM-dd");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  const formatTime = () => {
+    try {
+      if (!datetime) return "No time";
+      return format(parseISO(datetime), "HH:mm");
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Invalid time";
+    }
+  };
 
   const handleStartScan = async () => {
     if (!permission) {
@@ -168,84 +193,148 @@ export default function FaceIdVerification({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.verificationCard}>
-        <View style={styles.header}>
-          <Ionicons
-            name="scan-outline"
-            size={24}
-            color="#93C5FD"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Face ID Verification</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          Position your face within the frame for verification.
-        </Text>
-
-        {capturedPhoto ? (
-          <View style={styles.photoPreviewContainer}>
-            <Image
-              source={{ uri: capturedPhoto }}
-              style={styles.photoPreview}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Date/Time Display */}
+        <View style={styles.dateTimeSection}>
+          <View style={styles.dateBox}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color="#5EEAD4"
+              style={{ marginRight: 6 }}
             />
-            <View style={styles.photoOverlay}>
-              <TouchableOpacity
-                style={styles.retakeButton}
-                onPress={retakePhoto}
-              >
-                <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.retakeText}>Retake</Text>
-              </TouchableOpacity>
-            </View>
-            {isProcessing && (
-              <View style={styles.processingOverlay}>
-                <View style={styles.processingIndicator} />
-                <Text style={styles.processingText}>Processing...</Text>
-              </View>
-            )}
+            <Text style={styles.dateText}>{formatDate()}</Text>
           </View>
-        ) : (
-          <View style={styles.scannerContainer}>
-            <View style={styles.scannerFrame}>
-              <View style={styles.scannerCircle} />
-              <Ionicons
-                name="scan"
-                size={80}
-                color="rgba(147, 197, 253, 0.3)"
+          <View style={styles.timeBox}>
+            <Ionicons
+              name="time-outline"
+              size={14}
+              color="#93C5FD"
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.timeText}>{formatTime()}</Text>
+          </View>
+        </View>
+
+        <View style={styles.verificationCard}>
+          <View style={styles.header}>
+            <Ionicons
+              name="scan-outline"
+              size={24}
+              color="#93C5FD"
+              style={styles.icon}
+            />
+            <Text style={styles.title}>Face ID Verification</Text>
+          </View>
+          <Text style={styles.subtitle}>
+            Position your face within the frame for verification.
+          </Text>
+
+          {capturedPhoto ? (
+            <View style={styles.photoPreviewContainer}>
+              <Image
+                source={{ uri: capturedPhoto }}
+                style={styles.photoPreview}
               />
+              <View style={styles.photoOverlay}>
+                <TouchableOpacity
+                  style={styles.retakeButton}
+                  onPress={retakePhoto}
+                >
+                  <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.retakeText}>Retake</Text>
+                </TouchableOpacity>
+              </View>
+              {isProcessing && (
+                <View style={styles.processingOverlay}>
+                  <View style={styles.processingIndicator} />
+                  <Text style={styles.processingText}>Processing...</Text>
+                </View>
+              )}
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={styles.scannerContainer}>
+              <View style={styles.scannerFrame}>
+                <View style={styles.scannerCircle} />
+                <Ionicons
+                  name="scan"
+                  size={80}
+                  color="rgba(147, 197, 253, 0.3)"
+                />
+              </View>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.verifyButton,
+            capturedPhoto && styles.verifyButtonDisabled,
+          ]}
+          onPress={capturedPhoto ? handleVerifyFace : handleStartScan}
+          disabled={isProcessing || isVerifying}
+        >
+          <Text style={styles.verifyButtonText}>
+            {capturedPhoto ? "Verify Face" : "Start Face Scan"}
+          </Text>
+        </TouchableOpacity>
+
+        <FaceVerificationOverlay
+          visible={showVerificationOverlay}
+          isProcessing={isVerifying}
+          result={verificationResult}
+          onClose={handleOverlayClose}
+          onRetry={handleRetryVerification}
+        />
       </View>
-
-      <TouchableOpacity
-        style={[
-          styles.verifyButton,
-          capturedPhoto && styles.verifyButtonDisabled,
-        ]}
-        onPress={capturedPhoto ? handleVerifyFace : handleStartScan}
-        disabled={isProcessing || isVerifying}
-      >
-        <Text style={styles.verifyButtonText}>
-          {capturedPhoto ? "Verify Face" : "Start Face Scan"}
-        </Text>
-      </TouchableOpacity>
-
-      <FaceVerificationOverlay
-        visible={showVerificationOverlay}
-        isProcessing={isVerifying}
-        result={verificationResult}
-        onClose={handleOverlayClose}
-        onRetry={handleRetryVerification}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     gap: 24,
+  },
+  dateTimeSection: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  dateBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(45, 212, 191, 0.3)",
+  },
+  dateText: {
+    color: "#5EEAD4", // teal-200
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  timeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(96, 165, 250, 0.3)",
+  },
+  timeText: {
+    color: "#93C5FD", // blue-200
+    fontSize: 13,
+    fontWeight: "600",
   },
   verificationCard: {
     // p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-teal-500/10 backdrop-blur-sm border border-blue-400/20
