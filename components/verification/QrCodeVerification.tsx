@@ -1,13 +1,143 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { useState } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  QrCodeVerificationResult,
+  verifyQrCodeWithLLM,
+} from "../../services/qrCodeVerification";
+import QrCodeVerificationOverlay from "./QrCodeVerificationOverlay";
 
 interface QrCodeVerificationProps {
   onVerify: () => void;
+  taskId?: string;
 }
 
 export default function QrCodeVerification({
   onVerify,
+  taskId,
 }: QrCodeVerificationProps) {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [showCamera, setShowCamera] = useState(false);
+  const [showVerificationOverlay, setShowVerificationOverlay] = useState(false);
+  const [verificationResult, setVerificationResult] =
+    useState<QrCodeVerificationResult | null>(null);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleStartScanning = async () => {
+    if (!permission) {
+      return;
+    }
+
+    if (!permission.granted) {
+      const response = await requestPermission();
+      if (!response.granted) {
+        Alert.alert(
+          "Permission required",
+          "Camera permission is needed for QR code scanning"
+        );
+        return;
+      }
+    }
+
+    setShowCamera(true);
+  };
+
+  const handleBarcodeScanned = async ({
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
+    if (scannedData || isScanning) return; // Prevent multiple scans
+
+    console.log("QR Code detected:", data);
+    setIsScanning(true);
+    setScannedData(data);
+
+    // Show visual feedback for 500ms before closing camera
+    setTimeout(async () => {
+      setShowCamera(false);
+      setShowVerificationOverlay(true);
+
+      // Call the verification service
+      const result = await verifyQrCodeWithLLM(data);
+      setVerificationResult(result);
+      setIsScanning(false);
+    }, 500);
+  };
+
+  const handleVerificationComplete = () => {
+    setShowVerificationOverlay(false);
+
+    if (verificationResult?.verified) {
+      // Verification successful - delete task and navigate back
+      onVerify();
+    } else {
+      // Reset for retry
+      setScannedData(null);
+      setVerificationResult(null);
+    }
+  };
+
+  // Show camera view
+  if (showCamera) {
+    return (
+      <View style={styles.cameraFullscreen}>
+        <CameraView
+          style={styles.camera}
+          facing="back"
+          barcodeScannerSettings={{
+            barcodeTypes: ["qr"],
+          }}
+          onBarcodeScanned={handleBarcodeScanned}
+        >
+          <View style={styles.cameraOverlay}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setShowCamera(false);
+                setScannedData(null);
+                setIsScanning(false);
+              }}
+            >
+              <Ionicons name="close" size={32} color="#fff" />
+            </TouchableOpacity>
+
+            <View style={styles.scannerFrameOverlay}>
+              <View
+                style={[
+                  styles.scannerBorder,
+                  isScanning && styles.scannerBorderSuccess,
+                ]}
+              >
+                <View style={[styles.corner, styles.topLeft]} />
+                <View style={[styles.corner, styles.topRight]} />
+                <View style={[styles.corner, styles.bottomLeft]} />
+                <View style={[styles.corner, styles.bottomRight]} />
+              </View>
+              {isScanning && (
+                <View style={styles.scanSuccessIndicator}>
+                  <Ionicons name="checkmark-circle" size={64} color="#10B981" />
+                  <Text style={styles.scanSuccessText}>QR Code Detected!</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>
+                {isScanning
+                  ? "Processing QR code..."
+                  : "Position QR code within the frame"}
+              </Text>
+            </View>
+          </View>
+        </CameraView>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.verificationCard}>
@@ -42,9 +172,18 @@ export default function QrCodeVerification({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.verifyButton} onPress={onVerify}>
+      <TouchableOpacity
+        style={styles.verifyButton}
+        onPress={handleStartScanning}
+      >
         <Text style={styles.verifyButtonText}>Start QR Scan</Text>
       </TouchableOpacity>
+
+      <QrCodeVerificationOverlay
+        visible={showVerificationOverlay}
+        result={verificationResult}
+        onComplete={handleVerificationComplete}
+      />
     </View>
   );
 }
@@ -152,6 +291,65 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   verifyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  // Camera view styles
+  cameraFullscreen: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraOverlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  closeButton: {
+    alignSelf: "flex-start",
+    marginLeft: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: 24,
+    padding: 8,
+  },
+  scannerFrameOverlay: {
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 250,
+    height: 250,
+  },
+  scannerBorderSuccess: {
+    borderColor: "#10B981", // Green when scanned
+    borderWidth: 6,
+  },
+  scanSuccessIndicator: {
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    borderRadius: 16,
+    padding: 20,
+  },
+  scanSuccessText: {
+    color: "#10B981",
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 12,
+  },
+  instructionContainer: {
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  instructionText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",

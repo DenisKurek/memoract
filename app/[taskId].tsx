@@ -45,7 +45,7 @@ export default function CompleteTask() {
       case CompletionMethod.FACE_ID:
         return <FaceIdVerification onVerify={handleVerify} />;
       case CompletionMethod.QR_CODE:
-        return <QrCodeVerification onVerify={handleVerify} />;
+        return <QrCodeVerification onVerify={handleVerify} taskId={taskId} />;
       case CompletionMethod.GEOLOCATION:
         return (
           <GeolocationVerification onVerify={handleVerify} taskId={taskId} />
