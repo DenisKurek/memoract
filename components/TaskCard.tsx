@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Task, CompletionMethod } from '@/types/task-types';
+import { Task, CompletionMethodType } from '@/types/task-types';
 import { Ionicons } from '@expo/vector-icons';
 
 type TaskCardProps = {
@@ -29,14 +29,14 @@ export default function TaskCard(props:TaskCardProps) {
                     <View style={styles.metaBoxDate}>
                         <Ionicons name="calendar-outline" size={16} style={styles.dateText} />;
                         <Text style={styles.dateText}>
-                            {task.datetime ? new Date(task.datetime).toLocaleDateString() : ''}
+                            {task.date? task.date.toLocaleDateString() : ''}
                         </Text>
                     </View>
                     <View style={styles.metaBoxTime
                     }>
                         <Ionicons name="time-outline" size={16} style={styles.timeText} />;
                          <Text style={styles.timeText}>
-                            {task.datetime ? new Date(task.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {task.time? task.time: ''}
                         </Text>
                     </View>
                     <View style={styles.metaBoxCategory}>
@@ -48,15 +48,15 @@ export default function TaskCard(props:TaskCardProps) {
         );
 }
 
-export const getMethodIcon = (method:CompletionMethod) => {
+export const getMethodIcon = (method:CompletionMethodType) => {
   switch (method) {
-    case CompletionMethod.QR_CODE:
+    case CompletionMethodType.QR_CODE:
         return "qr-code-outline";
-    case CompletionMethod.PHOTO:
+    case CompletionMethodType.PHOTO:
       return "camera-outline";
-    case CompletionMethod.FACE_ID:
+    case CompletionMethodType.FACE_ID:
       return "scan-outline";
-    case CompletionMethod.GEOLOCATION:
+    case CompletionMethodType.GEOLOCATION:
       return "location-outline";
 };}
 

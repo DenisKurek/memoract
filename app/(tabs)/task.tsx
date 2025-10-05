@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button } from 'react-native';
+import { Text, TextInput, Button } from 'react-native';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useDB } from '@/hooks/local-db';
-import { CompletionMethod } from '@/types/task-types';
+import { CompletionMethodType } from '@/types/task-types';
 import GradientContainer from '@/components/GradientContainer';
 
 
@@ -31,8 +31,11 @@ export default function TaskPage() {
         const resposnte = await db.saveTask({
           title: "ala ma kota",
           description: 'Sample task description',
-          datetime: new Date().toDateString(),
-          completionMethod: CompletionMethod.PHOTO,
+          date: new Date(),
+          time: '12:00',
+          completionMethod: CompletionMethodType.PHOTO,
+          createdAt: new Date(),
+          completed: false,
         })
         console.log('Submitted value:', resposnte);
       }} />
