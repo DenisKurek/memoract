@@ -45,36 +45,15 @@ export default function CompleteTask() {
 
     switch (task.completionMethod) {
       case CompletionMethodType.FACE_ID:
-        return (
-          <FaceIdVerification
-            onVerify={handleVerify}
-            datetime={task.datetime}
-          />
-        );
+        return <FaceIdVerification onVerify={handleVerify} />;
       case CompletionMethodType.QR_CODE:
-        return (
-          <QrCodeVerification
-            onVerify={handleVerify}
-            taskId={taskId}
-            datetime={task.datetime}
-          />
-        );
+        return <QrCodeVerification onVerify={handleVerify} taskId={taskId} />;
       case CompletionMethodType.GEOLOCATION:
         return (
-          <GeolocationVerification
-            onVerify={handleVerify}
-            taskId={taskId}
-            datetime={task.datetime}
-          />
+          <GeolocationVerification onVerify={handleVerify} taskId={taskId} />
         );
       case CompletionMethodType.PHOTO:
-        return (
-          <PhotoVerification
-            onVerify={handleVerify}
-            taskId={taskId}
-            datetime={task.datetime}
-          />
-        );
+        return <PhotoVerification onVerify={handleVerify} taskId={taskId} />;
     }
   };
 
@@ -123,7 +102,6 @@ export default function CompleteTask() {
           </View>
         </View>
 
-        {/* Dynamic Verification Component */}
         {renderVerificationComponent()}
       </View>
     </GradientContainer>
@@ -135,6 +113,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     paddingHorizontal: 12,
+    paddingTop: 12,
   },
   header: {
     flexDirection: "row",
@@ -170,7 +149,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(59, 130, 246, 0.1)", // Gradient approximation
     borderRadius: 16,
     padding: 20,
-    marginBottom: 24,
     borderWidth: 1,
     borderColor: "rgba(96, 165, 250, 0.2)", // border-blue-400/20
     // Adding overlay effect to simulate gradient

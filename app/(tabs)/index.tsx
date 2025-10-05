@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,14 @@ import {
   SafeAreaView,
   FlatList,
   ActivityIndicator,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useDB } from '@/hooks/local-db';
-import { Task } from '@/types/task-types';
-import GradientContainer from '@/components/GradientContainer';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useDB } from "@/hooks/local-db";
+import { Task } from "@/types/task-types";
+import GradientContainer from "@/components/GradientContainer";
+import { format, parseISO } from "date-fns";
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -26,7 +27,7 @@ export default function HomeScreen() {
       const fetchedTasks = await getAllTasks();
       setTasks(fetchedTasks);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error("Error loading tasks:", error);
     } finally {
       setLoading(false);
     }
@@ -47,9 +48,9 @@ export default function HomeScreen() {
       <View style={styles.taskHeader}>
         <Text style={styles.taskTitle}>{item.title}</Text>
         <Ionicons
-          name={item.completed ? 'checkmark-circle' : 'ellipse-outline'}
+          name={item.completed ? "checkmark-circle" : "ellipse-outline"}
           size={24}
-          color={item.completed ? '#4CAF50' : '#8a8a8a'}
+          color={item.completed ? "#4CAF50" : "#8a8a8a"}
         />
       </View>
       <Text style={styles.taskDescription} numberOfLines={2}>
@@ -57,7 +58,12 @@ export default function HomeScreen() {
       </Text>
       <View style={styles.taskFooter}>
         <Text style={styles.taskDate}>
-          {new Date(item.date).toLocaleDateString()} • {item.time}
+          {item.datetime
+            ? `${format(parseISO(item.datetime), "MMM dd, yyyy")} • ${format(
+                parseISO(item.datetime),
+                "HH:mm"
+              )}`
+            : "No date"}
         </Text>
       </View>
     </TouchableOpacity>
@@ -70,7 +76,7 @@ export default function HomeScreen() {
           {/* Header with gradient text */}
           <View style={styles.header}>
             <LinearGradient
-              colors={['#8a2be2', '#00cfff']}
+              colors={["#8a2be2", "#00cfff"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.logoGradient}
@@ -89,7 +95,11 @@ export default function HomeScreen() {
             </View>
           ) : tasks.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="list-outline" size={80} color="rgba(255, 255, 255, 0.3)" />
+              <Ionicons
+                name="list-outline"
+                size={80}
+                color="rgba(255, 255, 255, 0.3)"
+              />
               <Text style={styles.emptyStateText}>No tasks yet</Text>
               <Text style={styles.emptyStateSubtext}>
                 Create your first task to get started
@@ -108,11 +118,11 @@ export default function HomeScreen() {
           {/* Add Task Button */}
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => router.push('/add-task')}
+            onPress={() => router.push("/add-task")}
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={['#8a2be2', '#00cfff']}
+              colors={["#8a2be2", "#00cfff"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.addButtonGradient}
@@ -137,91 +147,91 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   header: {
     paddingTop: 20,
     paddingBottom: 20,
   },
   logoGradient: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 8,
   },
   headerTitle: {
     fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 8,
-    textShadowColor: 'rgba(138, 43, 226, 0.5)',
+    textShadowColor: "rgba(138, 43, 226, 0.5)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#aaa',
+    color: "#aaa",
     marginTop: 8,
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingBottom: 100,
   },
   emptyStateText: {
     fontSize: 24,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.6)",
     marginTop: 20,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.4)',
-    textAlign: 'center',
+    color: "rgba(255, 255, 255, 0.4)",
+    textAlign: "center",
   },
   tasksList: {
     paddingBottom: 20,
   },
   taskCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   taskTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     flex: 1,
   },
   taskDescription: {
     fontSize: 14,
-    color: '#aaa',
+    color: "#aaa",
     marginBottom: 12,
   },
   taskFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   taskDate: {
     fontSize: 12,
-    color: '#8a8a8a',
+    color: "#8a8a8a",
   },
   addButton: {
     borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#8a2be2',
+    overflow: "hidden",
+    shadowColor: "#8a2be2",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -229,15 +239,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   addButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 16,
     gap: 10,
   },
   addButtonText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
 });

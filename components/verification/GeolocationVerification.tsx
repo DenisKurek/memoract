@@ -1,48 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import GeolocationVerificationOverlay from "./GeolocationVerificationOverlay";
-import { format, parseISO } from "date-fns";
 
 interface GeolocationVerificationProps {
   onVerify: () => void;
   taskId?: string;
-  datetime: string;
 }
 
 export default function GeolocationVerification({
   onVerify,
   taskId,
-  datetime,
 }: GeolocationVerificationProps) {
   const [showOverlay, setShowOverlay] = useState(false);
-
-  // Safely format the datetime
-  const formatDate = () => {
-    try {
-      if (!datetime) return "No date";
-      return format(parseISO(datetime), "yyyy-MM-dd");
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Invalid date";
-    }
-  };
-
-  const formatTime = () => {
-    try {
-      if (!datetime) return "No time";
-      return format(parseISO(datetime), "HH:mm");
-    } catch (error) {
-      console.error("Error formatting time:", error);
-      return "Invalid time";
-    }
-  };
 
   const handleVerifyClick = () => {
     setShowOverlay(true);
@@ -57,28 +28,6 @@ export default function GeolocationVerification({
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Date/Time Display */}
-        <View style={styles.dateTimeSection}>
-          <View style={styles.dateBox}>
-            <Ionicons
-              name="calendar-outline"
-              size={14}
-              color="#5EEAD4"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.dateText}>{formatDate()}</Text>
-          </View>
-          <View style={styles.timeBox}>
-            <Ionicons
-              name="time-outline"
-              size={14}
-              color="#93C5FD"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.timeText}>{formatTime()}</Text>
-          </View>
-        </View>
-
         <View style={styles.verificationCard}>
           <View style={styles.header}>
             <Ionicons
@@ -130,42 +79,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     gap: 24,
-  },
-  dateTimeSection: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  dateBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(45, 212, 191, 0.3)",
-  },
-  dateText: {
-    color: "#5EEAD4", // teal-200
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  timeBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(30, 58, 138, 0.6)", // darker blue
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(96, 165, 250, 0.3)",
-  },
-  timeText: {
-    color: "#93C5FD", // blue-200
-    fontSize: 13,
-    fontWeight: "600",
   },
   verificationCard: {
     // p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-teal-400/20
