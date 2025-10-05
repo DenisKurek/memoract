@@ -1,13 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import GeolocationVerificationOverlay from "./GeolocationVerificationOverlay";
 
 interface GeolocationVerificationProps {
   onVerify: () => void;
+  taskId?: string;
 }
 
 export default function GeolocationVerification({
   onVerify,
+  taskId,
 }: GeolocationVerificationProps) {
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  const handleVerifyClick = () => {
+    setShowOverlay(true);
+  };
+
+  const handleVerificationComplete = async () => {
+    setShowOverlay(false);
+    // Call onVerify which will handle task deletion and navigation
+    onVerify();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.verificationCard}>
@@ -34,9 +50,14 @@ export default function GeolocationVerification({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.verifyButton} onPress={onVerify}>
+      <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyClick}>
         <Text style={styles.verifyButtonText}>Verify Location</Text>
       </TouchableOpacity>
+
+      <GeolocationVerificationOverlay
+        visible={showOverlay}
+        onComplete={handleVerificationComplete}
+      />
     </View>
   );
 }

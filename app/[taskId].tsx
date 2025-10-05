@@ -15,9 +15,23 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 export default function CompleteTask() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const router = useRouter();
+  const { getTaskById, deleteTask } = useDB();
+  const [task, setTask] = useState<Task | null>(null);
 
-  const handleVerify = () => {
-    console.log("Verify button pressed");
+  useEffect(() => {
+    const fetchTask = async () => {
+      const task = await getTaskById(taskId);
+      console.log("Fetched task:", task);
+      setTask(task);
+    };
+
+    fetchTask();
+  }, []);
+
+  const handleVerify = async () => {
+    console.log("Verification complete, deleting task:", taskId);
+    await deleteTask(taskId);
+    router.back();
   };
 
   const handleGoBack = () => {
@@ -33,23 +47,13 @@ export default function CompleteTask() {
       case CompletionMethod.QR_CODE:
         return <QrCodeVerification onVerify={handleVerify} />;
       case CompletionMethod.GEOLOCATION:
-        return <GeolocationVerification onVerify={handleVerify} />;
+        return (
+          <GeolocationVerification onVerify={handleVerify} taskId={taskId} />
+        );
       case CompletionMethod.PHOTO:
         return <PhotoVerification onVerify={handleVerify} />;
     }
   };
-  const { getTaskById } = useDB();
-  const [task, setTask] = useState<Task | null>(null);
-
-  useEffect(() => {
-    const fetchTask = async () => {
-      const task = await getTaskById(taskId);
-      console.log("Fetched task:", task);
-      setTask(task);
-    };
-
-    fetchTask();
-  }, []);
 
   return (
     <View style={styles.container}>

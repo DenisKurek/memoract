@@ -78,8 +78,12 @@ export function useDB() {
 
   const deleteTask = async (id: string): Promise<boolean> => {
     try {
+      console.log(`Attempting to delete task with id: ${id}`);
       const tasks = await getAllTasks();
+      console.log(`Found ${tasks.length} tasks before deletion`);
+
       const filteredTasks = tasks.filter((t) => t.id !== id);
+      console.log(`Filtered to ${filteredTasks.length} tasks after deletion`);
 
       if (filteredTasks.length === tasks.length) {
         console.warn(`Task with id ${id} not found`);
@@ -87,10 +91,22 @@ export function useDB() {
       }
 
       await SecureStore.setItemAsync(TASKS_KEY, JSON.stringify(filteredTasks));
+      console.log(`Successfully deleted task ${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting task:", error);
       throw new Error("Failed to delete task");
+    }
+  };
+
+  const clearAllTasks = async (): Promise<boolean> => {
+    try {
+      await SecureStore.setItemAsync(TASKS_KEY, JSON.stringify([]));
+      console.log("All tasks cleared successfully");
+      return true;
+    } catch (error) {
+      console.error("Error clearing all tasks:", error);
+      throw new Error("Failed to clear all tasks");
     }
   };
 
@@ -100,6 +116,7 @@ export function useDB() {
     getAllTasks,
     getTaskById,
     deleteTask,
+    clearAllTasks,
   };
 }
 
